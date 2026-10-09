@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
-import { panelSubdomain, rootDomain } from "@/lib/config";
+import { classifyHost } from "@/lib/hosts";
 
 // Panelde girişsiz açılabilen sayfalar
 const publicPanelPaths = ["/giris", "/kayit"];
@@ -11,32 +11,31 @@ const publicPanelPaths = ["/giris", "/kayit"];
 //   firma.platformadi.com     -> müşteri sitesi (app/site/[subdomain])
 //   firmam.com (custom)       -> müşteri sitesi (4. fazda domain tablosundan çözülecek)
 export function proxy(request: NextRequest) {
-  const host = (request.headers.get("host") ?? "").toLowerCase();
+  const host = classifyHost(request.headers.get("host"));
   const { pathname, search } = request.nextUrl;
 
-  if (host === rootDomain || host === `www.${rootDomain}`) {
-    // İç rotalar ana domain'den doğrudan açılamaz
-    if (pathname.startsWith("/panel") || pathname.startsWith("/site")) {
+  switch (host.kind) {
+    case "root":
+      // İç rotalar ana domain'den doğrudan açılamaz
+      if (pathname.startsWith("/panel") || pathname.startsWith("/site")) {
+        return NextResponse.rewrite(new URL("/404", request.url));
+      }
+      return NextResponse.next();
+
+    case "panel":
+      // İyimser kontrol: çerez yoksa girişe yönlendir. Asıl doğrulama sayfalarda ve action'larda yapılır.
+      if (!publicPanelPaths.includes(pathname) && !getSessionCookie(request)) {
+        return NextResponse.redirect(new URL("/giris", request.url));
+      }
+      return NextResponse.rewrite(new URL(`/panel${pathname === "/" ? "" : pathname}${search}`, request.url));
+
+    case "site":
+      return NextResponse.rewrite(new URL(`/site/${host.subdomain}${pathname === "/" ? "" : pathname}`, request.url));
+
+    case "custom":
+      // Custom domain: şimdilik desteklenmiyor (4. faz)
       return NextResponse.rewrite(new URL("/404", request.url));
-    }
-    return NextResponse.next();
   }
-
-  if (host === `${panelSubdomain}.${rootDomain}`) {
-    // İyimser kontrol: çerez yoksa girişe yönlendir. Asıl doğrulama sayfalarda ve action'larda yapılır.
-    if (!publicPanelPaths.includes(pathname) && !getSessionCookie(request)) {
-      return NextResponse.redirect(new URL("/giris", request.url));
-    }
-    return NextResponse.rewrite(new URL(`/panel${pathname === "/" ? "" : pathname}${search}`, request.url));
-  }
-
-  if (host.endsWith(`.${rootDomain}`)) {
-    const subdomain = host.slice(0, -(rootDomain.length + 1));
-    return NextResponse.rewrite(new URL(`/site/${subdomain}${pathname === "/" ? "" : pathname}`, request.url));
-  }
-
-  // Custom domain: şimdilik desteklenmiyor (4. faz)
-  return NextResponse.rewrite(new URL("/404", request.url));
 }
 
 export const config = {

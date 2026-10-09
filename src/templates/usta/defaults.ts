@@ -31,6 +31,7 @@ export function buildUstaContent(siteName: string, input: UstaSetup): SectionRow
     isletme: {
       enabled: true,
       content: {
+        logo: null,
         cep: input.cep,
         whatsapp: input.whatsapp,
         sabit: input.sabit,
@@ -51,6 +52,7 @@ export function buildUstaContent(siteName: string, input: UstaSetup): SectionRow
         aciklama: preset.intro,
         kartBaslik: `Neden ${siteName}?`,
         kartMaddeleri: preset.whyUs,
+        gorsel: null,
       },
     },
     one_cikanlar: { enabled: true, content: { kutular: preset.highlights } },
@@ -62,6 +64,8 @@ export function buildUstaContent(siteName: string, input: UstaSetup): SectionRow
         liste: preset.services.filter((_, i) => input.services.includes(i)),
       },
     },
+    // Fotoğraf yüklenene kadar kapalı kalır
+    galeri: { enabled: false, content: { baslik: "Yaptığımız İşler", aciklama: "", fotograflar: [] } },
     markalar: {
       enabled: true,
       content: { baslik: "Tüm Markalara Servis", aciklama: noAuthorizedService, markalar: preset.brands },

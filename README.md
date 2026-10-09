@@ -10,6 +10,21 @@ Küçük işletmeler için çok kiracılı (multi-tenant) web sitesi platformu. 
 
 Yönlendirme `src/proxy.ts` içinde yapılır. Platform adı ve ana domain `.env.local` içindeki `NEXT_PUBLIC_PLATFORM_NAME` ve `NEXT_PUBLIC_ROOT_DOMAIN` değerlerinden okunur.
 
+## Taslak ve yayın
+
+- Panelde yapılan her değişiklik taslaktır (`site_sections`). Ziyaretçi sadece yayındaki sürümü görür.
+- "Yayınla" taslağın anlık görüntüsünü `site_versions` tablosuna yazar ve sitenin önbelleğini yeniler. Son 10 sürüm saklanır.
+- "Geri al" taslağı yayındaki sürüme döndürür.
+- Önizleme: panelde `/siteler/<id>/onizleme`, müşteriye giriş gerektirmeyen 7 günlük link `<subdomain>/onizleme/<token>`.
+- Hiç yayınlanmamış siteler dışarıdan 404 döner; `robots.txt` ve `sitemap.xml` sadece yayındaki sitelerde açılır.
+
+## Fotoğraflar
+
+- `POST /api/media` ile yüklenir; `sharp` ile döndürülür (EXIF), 1600px ve 640px WebP'ye çevrilir.
+- Geliştirmede `.media/` klasörüne yazılır ve `/media/...` adresinden sunulur (`src/lib/storage.ts`).
+  Canlıda Cloudflare R2 / S3'e geçmek için sadece bu dosya değişir.
+- Kaydederken içerikteki her fotoğraf veritabanından doğrulanır; başka siteye ait fotoğraflar atılır.
+
 ## Teknoloji
 
 - Next.js 16 (App Router, Cache Components), Tailwind CSS

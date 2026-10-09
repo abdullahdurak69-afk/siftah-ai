@@ -11,6 +11,8 @@ export type FieldDef =
   | (Base & { type: "number"; placeholder?: string; min?: number; max?: number; step?: number })
   | (Base & { type: "tags"; placeholder?: string; max?: number })
   | (Base & { type: "icon" })
+  | (Base & { type: "image"; aspect?: "wide" | "square" | "logo" })
+  | (Base & { type: "images"; max?: number })
   | (Base & {
       type: "list";
       itemLabel: string;
@@ -21,6 +23,17 @@ export type FieldDef =
     });
 
 export type Fields = Record<string, FieldDef>;
+
+// Yüklenen bir fotoğrafın içerikte saklanan hali. src/srcSmall kaydederken veritabanından yeniden üretilir.
+export type ImageValue = { id: string; src: string; srcSmall: string; width: number; height: number };
+
+const imageSchema = z.object({
+  id: z.uuid(),
+  src: z.string(),
+  srcSmall: z.string(),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+});
 
 const phonePattern = /^[0-9+()\s-]{7,20}$/;
 
@@ -60,6 +73,10 @@ export function fieldSchema(field: FieldDef): z.ZodType {
         .max(field.max ?? 50, `En fazla ${field.max ?? 50} öğe eklenebilir.`);
     case "icon":
       return z.string().max(40);
+    case "image":
+      return imageSchema.nullable();
+    case "images":
+      return z.array(imageSchema).max(field.max ?? 24, `En fazla ${field.max ?? 24} fotoğraf eklenebilir.`);
     case "list":
       return z
         .array(objectSchema(field.fields))
@@ -75,9 +92,11 @@ export function objectSchema(fields: Fields) {
 export function emptyValue(field: FieldDef): unknown {
   switch (field.type) {
     case "number":
+    case "image":
       return null;
     case "tags":
     case "list":
+    case "images":
       return [];
     default:
       return "";
@@ -96,4 +115,31 @@ export function flattenErrors(error: z.ZodError) {
     errors[path] ??= issue.message;
   }
   return errors;
+}
+
+// İçerikteki tüm fotoğrafları bulup her birini fn ile dönüştürür (null dönerse fotoğraf çıkarılır).
+// Kaydederken fotoğrafların bu siteye ait olduğunu doğrulamak ve adreslerini sunucuda üretmek için kullanılır.
+export function mapImages(
+  fields: Fields,
+  value: Record<string, unknown>,
+  fn: (image: ImageValue) => ImageValue | null,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...value };
+  for (const [key, field] of Object.entries(fields)) {
+    const v = value[key];
+    if (field.type === "image") out[key] = v ? fn(v as ImageValue) : null;
+    else if (field.type === "images") out[key] = ((v as ImageValue[]) ?? []).map(fn).filter(Boolean);
+    else if (field.type === "list")
+      out[key] = ((v as Record<string, unknown>[]) ?? []).map((item) => mapImages(field.fields, item, fn));
+  }
+  return out;
+}
+
+export function collectImageIds(fields: Fields, value: Record<string, unknown>) {
+  const ids = new Set<string>();
+  mapImages(fields, value, (image) => {
+    ids.add(image.id);
+    return image;
+  });
+  return [...ids];
 }

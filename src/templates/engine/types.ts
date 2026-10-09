@@ -11,6 +11,8 @@ export type SectionDef = {
   // Menüde gösterilecek kısa ad; yoksa bölüm menüye girmez
   navLabel?: string;
   fields: Fields;
+  // Sonradan eklenen bölümler mevcut sitelere bu içerikle ve kapalı olarak eklenir
+  initial?: Record<string, unknown>;
 };
 
 export type SectionContent = Record<string, unknown>;

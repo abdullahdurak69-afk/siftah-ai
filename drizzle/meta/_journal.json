@@ -15,6 +15,13 @@
       "when": 1791577273463,
       "tag": "0001_smart_bushwacker",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791578171375,
+      "tag": "0002_loose_swordsman",
+      "breakpoints": true
     }
   ]
 }

@@ -1,36 +1,53 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, gt } from "drizzle-orm";
 import { db } from "@/db";
-import { siteSections, sites } from "@/db/schema";
+import { previewLinks, siteSections, siteVersions, sites } from "@/db/schema";
 import type { SectionRow } from "@/templates/engine/types";
 
 export function siteCacheTag(subdomain: string) {
   return `site:${subdomain}`;
 }
 
-// Ziyaretçiye gösterilen site verisi önbellekten okunur; panelde kaydedilince bu etiket yenilenir
-export async function getPublicSite(subdomain: string) {
+export type RenderableSite = {
+  site: { id: string; name: string; sector: (typeof sites.$inferSelect)["sector"]; theme: string; profession: string | null };
+  sections: SectionRow[];
+  publishedAt: Date | null;
+};
+
+// Ziyaretçiye gösterilen site: her zaman yayındaki sürümün anlık görüntüsü. Yayınlanınca etiket yenilenir.
+export async function getPublicSite(subdomain: string): Promise<RenderableSite | null> {
   "use cache";
   cacheTag(siteCacheTag(subdomain));
   cacheLife("hours");
 
-  const [site] = await db
+  const [row] = await db
     .select({
       id: sites.id,
-      name: sites.name,
       sector: sites.sector,
       status: sites.status,
-      theme: sites.theme,
-      profession: sites.profession,
+      snapshot: siteVersions.snapshot,
+      publishedAt: siteVersions.createdAt,
     })
     .from(sites)
+    .innerJoin(siteVersions, eq(siteVersions.id, sites.publishedVersionId))
     .where(eq(sites.subdomain, subdomain))
     .limit(1);
 
-  if (!site) return null;
+  // Hiç yayınlanmamış veya askıya alınmış siteler dışarıdan görünmez
+  if (!row || row.status !== "published") return null;
 
-  const sections: SectionRow[] = await db
+  const { snapshot } = row;
+  return {
+    site: { id: row.id, sector: row.sector, name: snapshot.name, theme: snapshot.theme, profession: snapshot.profession },
+    sections: snapshot.sections,
+    publishedAt: row.publishedAt,
+  };
+}
+
+// Panelde ve önizlemede gösterilen taslak hali (önbelleğe alınmaz)
+export async function getDraftSections(siteId: string): Promise<SectionRow[]> {
+  return db
     .select({
       key: siteSections.key,
       position: siteSections.position,
@@ -38,8 +55,21 @@ export async function getPublicSite(subdomain: string) {
       content: siteSections.content,
     })
     .from(siteSections)
-    .where(eq(siteSections.siteId, site.id))
+    .where(eq(siteSections.siteId, siteId))
     .orderBy(asc(siteSections.position));
+}
 
-  return { site, sections };
+// Paylaşılabilir önizleme linki: token geçerliyse ve bu subdomain'e aitse taslağı döner
+export async function getSiteByPreviewToken(subdomain: string, token: string): Promise<RenderableSite | null> {
+  if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) return null;
+
+  const [site] = await db
+    .select({ id: sites.id, name: sites.name, sector: sites.sector, theme: sites.theme, profession: sites.profession })
+    .from(previewLinks)
+    .innerJoin(sites, eq(sites.id, previewLinks.siteId))
+    .where(and(eq(previewLinks.token, token), eq(sites.subdomain, subdomain), gt(previewLinks.expiresAt, new Date())))
+    .limit(1);
+
+  if (!site) return null;
+  return { site, sections: await getDraftSections(site.id), publishedAt: null };
 }

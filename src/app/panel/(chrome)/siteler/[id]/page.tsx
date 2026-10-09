@@ -46,15 +46,17 @@ export default async function SiteOverviewPage({ params }: PageProps<"/panel/sit
   return (
     <div className="flex flex-col gap-4">
       <Card>
-        <h2 className="text-lg font-semibold">Siteniz hazır</h2>
+        <h2 className="text-lg font-semibold">{site.publishedVersionId ? "Siteniz yayında" : "Siteniz hazır"}</h2>
         <p className="mt-1 text-slate-600">
           İçerikler <strong>{getPreset(site.profession)?.label ?? "mesleğinize"}</strong> için örnek metinlerle
-          dolduruldu. Soldaki bölümlerden kendi işinize göre düzenleyin; kaydettiğiniz değişiklikler sitede hemen
-          görünür.
+          dolduruldu. Soldaki bölümlerden kendi işinize göre düzenleyin, fotoğraflarınızı ekleyin. Değişiklikleriniz
+          &quot;Önizle&quot; ile kontrol edip &quot;Yayınla&quot;ya bastığınızda sitede görünür.
         </p>
-        <a href={url} target="_blank" rel="noreferrer" className="mt-3 inline-block font-medium underline">
-          {url.replace(/^https?:\/\//, "")}
-        </a>
+        {site.publishedVersionId && (
+          <a href={url} target="_blank" rel="noreferrer" className="mt-3 inline-block font-medium underline">
+            {url.replace(/^https?:\/\//, "")}
+          </a>
+        )}
       </Card>
 
       <Card>

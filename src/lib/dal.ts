@@ -4,8 +4,10 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { siteMembers, siteSections, sites } from "@/db/schema";
+import { siteMembers, siteSections, siteVersions, sites } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { emptyObject } from "@/templates/engine/fields";
+import { getTemplate } from "@/templates/registry";
 
 export type CurrentUser = {
   id: string;
@@ -72,11 +74,52 @@ export const getEditableSite = cache(async (siteId: string) => {
   const site = await findEditableSite(siteId);
   if (!site) notFound();
 
-  const sections = await db
-    .select()
-    .from(siteSections)
-    .where(eq(siteSections.siteId, site.id))
-    .orderBy(asc(siteSections.position));
+  await ensureTemplateSections(site);
 
-  return { site, sections };
+  const [sections, [published]] = await Promise.all([
+    db.select().from(siteSections).where(eq(siteSections.siteId, site.id)).orderBy(asc(siteSections.position)),
+    site.publishedVersionId
+      ? db
+          .select({ createdAt: siteVersions.createdAt })
+          .from(siteVersions)
+          .where(eq(siteVersions.id, site.publishedVersionId))
+      : Promise.resolve([]),
+  ]);
+
+  const publishedAt = published?.createdAt ?? null;
+  const hasUnpublishedChanges = !publishedAt || site.contentUpdatedAt > publishedAt;
+
+  return { site, sections, publishedAt, hasUnpublishedChanges };
 });
+
+// Şablona sonradan eklenen bölümleri (ör. galeri) mevcut sitelere kapalı olarak ekler ve sırayı şablona göre düzeltir
+async function ensureTemplateSections(site: typeof sites.$inferSelect) {
+  const template = getTemplate(site.sector);
+  if (!template || !site.setupCompletedAt) return;
+
+  const existing = await db
+    .select({ key: siteSections.key, position: siteSections.position })
+    .from(siteSections)
+    .where(eq(siteSections.siteId, site.id));
+  const keys = new Set(existing.map((s) => s.key));
+  const missing = template.sections.filter((def) => !keys.has(def.key));
+  if (missing.length === 0) return;
+
+  await db.transaction(async (tx) => {
+    await tx.insert(siteSections).values(
+      missing.map((def) => ({
+        siteId: site.id,
+        key: def.key,
+        position: 0,
+        enabled: false,
+        content: def.initial ?? emptyObject(def.fields),
+      })),
+    );
+    for (const [position, def] of template.sections.entries()) {
+      await tx
+        .update(siteSections)
+        .set({ position })
+        .where(and(eq(siteSections.siteId, site.id), eq(siteSections.key, def.key)));
+    }
+  });
+}

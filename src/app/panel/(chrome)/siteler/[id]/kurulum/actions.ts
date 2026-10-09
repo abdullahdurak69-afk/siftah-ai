@@ -1,11 +1,9 @@
 "use server";
 
-import { updateTag } from "next/cache";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { siteSections, sites } from "@/db/schema";
 import { findEditableSite } from "@/lib/dal";
-import { siteCacheTag } from "@/lib/sites";
 import { flattenErrors } from "@/templates/engine/fields";
 import { buildUstaContent, ustaSetupSchema } from "@/templates/usta/defaults";
 import type { ActionResult } from "../actions";
@@ -28,10 +26,10 @@ export async function completeSetup(siteId: string, input: unknown): Promise<Act
     await tx.insert(siteSections).values(rows.map((row) => ({ ...row, siteId: site.id })));
     await tx
       .update(sites)
-      .set({ profession: parsed.data.profession, setupCompletedAt: new Date() })
+      .set({ profession: parsed.data.profession, setupCompletedAt: new Date(), contentUpdatedAt: sql`now()` })
       .where(eq(sites.id, site.id));
   });
 
-  updateTag(siteCacheTag(site.subdomain));
+  // Ziyaretçiler yayındaki sürümü görür; kurulum sadece taslağı değiştirir
   return { ok: true };
 }

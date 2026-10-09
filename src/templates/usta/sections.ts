@@ -9,6 +9,7 @@ export const ustaSections: SectionDef[] = [
     kind: "settings",
     optional: false,
     fields: {
+      logo: { type: "image", label: "Logo", aspect: "logo", hint: "İsteğe bağlı. Yoksa işletme adı yazı olarak gösterilir." },
       cep: { type: "phone", label: "Cep telefonu", placeholder: "0532 123 45 67", required: true },
       whatsapp: { type: "phone", label: "WhatsApp numarası", placeholder: "0532 123 45 67", hint: "Boş bırakılırsa cep telefonu kullanılır." },
       sabit: { type: "phone", label: "Sabit telefon", placeholder: "0216 123 45 67" },
@@ -33,6 +34,7 @@ export const ustaSections: SectionDef[] = [
       aciklama: { type: "textarea", label: "Kısa tanıtım", required: true, max: 400 },
       kartBaslik: { type: "text", label: "Yan kart başlığı", placeholder: "Neden biz?", max: 60 },
       kartMaddeleri: { type: "tags", label: "Yan kart maddeleri", placeholder: "Aynı gün yerinde servis", max: 6 },
+      gorsel: { type: "image", label: "Arka plan fotoğrafı", aspect: "wide", hint: "İsteğe bağlı. Dükkânınızın veya işinizin geniş bir fotoğrafı; üzerine koyu bir katman eklenir." },
     },
   },
   {
@@ -76,6 +78,20 @@ export const ustaSections: SectionDef[] = [
           aciklama: { type: "textarea", label: "Açıklama", required: true, max: 300 },
         },
       },
+    },
+  },
+  {
+    key: "galeri",
+    title: "Yaptığımız işler",
+    description: "Önce/sonra, atölye ve iş fotoğraflarınız. Gerçek fotoğraflar güveni çok artırır.",
+    kind: "block",
+    optional: true,
+    navLabel: "İşlerimiz",
+    initial: { baslik: "Yaptığımız İşler", aciklama: "", fotograflar: [] },
+    fields: {
+      baslik: { type: "text", label: "Bölüm başlığı", required: true, max: 60 },
+      aciklama: { type: "textarea", label: "Bölüm açıklaması", max: 300 },
+      fotograflar: { type: "images", label: "Fotoğraflar", max: 24 },
     },
   },
   {

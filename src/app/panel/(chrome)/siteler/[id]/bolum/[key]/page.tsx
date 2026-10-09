@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getEditableSite } from "@/lib/dal";
+import { emptyObject } from "@/templates/engine/fields";
 import { getSectionDef } from "@/templates/registry";
 import { SectionForm } from "@/components/editor/section-form";
 import { SectionToggle } from "./section-toggle";
@@ -30,8 +31,8 @@ export default async function SectionPage({ params }: PageProps<"/panel/siteler/
       )}
 
       <div className="rounded-xl border border-slate-200 bg-white p-5">
-        {/* key: başka bir bölüme geçildiğinde form durumu sıfırlansın */}
-        <SectionForm key={key} siteId={site.id} sectionKey={key} fields={def.fields} initial={row.content} />
+        {/* key: başka bir bölüme geçildiğinde form durumu sıfırlansın. Şablona sonradan eklenen alanlar boş değerle tamamlanır. */}
+        <SectionForm key={key} siteId={site.id} sectionKey={key} fields={def.fields} initial={{ ...emptyObject(def.fields), ...row.content }} />
       </div>
     </div>
   );

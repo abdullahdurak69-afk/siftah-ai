@@ -3,6 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { getEditableSite } from "@/lib/dal";
 import { siteUrl } from "@/lib/config";
 import { getTemplate } from "@/templates/registry";
+import { PublishBar } from "./publish-bar";
 import { SectionNav } from "./section-nav";
 
 // Panel her istekte kullanıcıya özel veri okur; statik kabuk gerekmez
@@ -10,7 +11,7 @@ export const instant = false;
 
 export default async function SiteEditorLayout({ children, params }: LayoutProps<"/panel/siteler/[id]">) {
   const { id } = await params;
-  const { site, sections } = await getEditableSite(id);
+  const { site, sections, publishedAt, hasUnpublishedChanges } = await getEditableSite(id);
   const template = getTemplate(site.sector);
   const url = siteUrl(site.subdomain);
 
@@ -33,15 +34,26 @@ export default async function SiteEditorLayout({ children, params }: LayoutProps
             <Link href={`/siteler/${site.id}`}>{site.name}</Link>
           </h1>
         </div>
-        <a
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"
-        >
-          Siteyi aç <ExternalLink className="size-4" />
-        </a>
+        {publishedAt && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 text-sm font-medium text-slate-600 underline hover:text-slate-900"
+          >
+            {url.replace(/^https?:\/\//, "")} <ExternalLink className="size-4" />
+          </a>
+        )}
       </div>
+
+      {navItems.length > 0 && (
+        <PublishBar
+          siteId={site.id}
+          status={site.status}
+          published={Boolean(publishedAt)}
+          hasUnpublishedChanges={hasUnpublishedChanges}
+        />
+      )}
 
       {navItems.length > 0 ? (
         <div className="flex flex-col gap-6 md:flex-row md:items-start">

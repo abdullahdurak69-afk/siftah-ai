@@ -1,4 +1,5 @@
 import {
+  type AnyPgColumn,
   boolean,
   index,
   integer,
@@ -92,6 +93,11 @@ export const sites = pgTable("sites", {
   profession: text("profession"),
   theme: text("theme").notNull().default("turuncu"),
   setupCompletedAt: timestamp("setup_completed_at", { withTimezone: true }),
+  // Taslakta en son ne zaman değişiklik yapıldı; yayınlanmamış değişiklik var mı diye yayın tarihiyle karşılaştırılır
+  contentUpdatedAt: timestamp("content_updated_at", { withTimezone: true }).notNull().defaultNow(),
+  publishedVersionId: uuid("published_version_id").references((): AnyPgColumn => siteVersions.id, {
+    onDelete: "set null",
+  }),
   subscriptionEndsAt: timestamp("subscription_ends_at", { withTimezone: true }),
   ...timestamps,
 });
@@ -129,5 +135,61 @@ export const siteSections = pgTable(
   },
   (t) => [primaryKey({ columns: [t.siteId, t.key] })],
 );
+
+// Her "Yayınla" bir sürüm üretir. Ziyaretçiye her zaman yayındaki sürümün anlık görüntüsü gösterilir.
+export const siteVersions = pgTable(
+  "site_versions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    snapshot: jsonb("snapshot").$type<SiteSnapshot>().notNull(),
+    publishedBy: text("published_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("site_versions_site_id_idx").on(t.siteId, t.createdAt)],
+);
+
+// Giriş yapmadan taslağı görmeyi sağlayan süreli linkler (ajans modelinde müşteri onayı için)
+export const previewLinks = pgTable(
+  "preview_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("preview_links_site_id_idx").on(t.siteId)],
+);
+
+export const media = pgTable(
+  "media",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    // Depolamadaki yol öneki; büyük ve küçük boyutlar <key>-1600.webp ve <key>-640.webp olarak saklanır
+    key: text("key").notNull().unique(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    bytes: integer("bytes").notNull(),
+    uploadedBy: text("uploaded_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("media_site_id_idx").on(t.siteId)],
+);
+
+export type SiteSnapshot = {
+  name: string;
+  theme: string;
+  profession: string | null;
+  sections: { key: string; position: number; enabled: boolean; content: Record<string, unknown> }[];
+};
 
 export type Site = typeof sites.$inferSelect;

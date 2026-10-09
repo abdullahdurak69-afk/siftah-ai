@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Plus, Trash2, X } from "lucide-react";
-import { emptyObject, type FieldDef, type Fields } from "@/templates/engine/fields";
+import { emptyObject, type FieldDef, type Fields, type ImageValue } from "@/templates/engine/fields";
 import { icons, SectionIcon } from "@/templates/icons";
+import { GalleryInput, ImageInput } from "./image-input";
 
 type Errors = Record<string, string>;
 
@@ -103,6 +104,12 @@ function FieldInput({
       break;
     case "icon":
       control = <IconPicker value={(value as string) ?? ""} onChange={onChange} />;
+      break;
+    case "image":
+      control = <ImageInput value={(value as ImageValue | null) ?? null} onChange={onChange} aspect={field.aspect} />;
+      break;
+    case "images":
+      control = <GalleryInput value={(value as ImageValue[]) ?? []} onChange={onChange} max={field.max} />;
       break;
     default:
       control = (

@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { Check, ChevronDown, Clock, MapPin, MessageCircle, Phone, Star } from "lucide-react";
 import { telHref, whatsappHref } from "@/lib/turkish";
+import type { ImageValue } from "../engine/fields";
 import type { SectionRow } from "../engine/types";
 import { SectionIcon } from "../icons";
 import { getTheme } from "../themes";
@@ -9,6 +10,7 @@ import { ustaSections } from "./sections";
 // --- İçerik tipleri (sections.ts ile birebir) ---
 
 type Business = {
+  logo?: ImageValue | null;
   cep: string;
   whatsapp: string;
   sabit: string;
@@ -20,7 +22,15 @@ type Business = {
   googlePuan: number | null;
   yorumSayisi: number | null;
 };
-type Hero = { baslikOn: string; baslikVurgu: string; aciklama: string; kartBaslik: string; kartMaddeleri: string[] };
+type Hero = {
+  baslikOn: string;
+  baslikVurgu: string;
+  aciklama: string;
+  kartBaslik: string;
+  kartMaddeleri: string[];
+  gorsel?: ImageValue | null;
+};
+type Gallery = { baslik: string; aciklama: string; fotograflar: ImageValue[] };
 type Highlights = { kutular: { deger: string; etiket: string }[] };
 type Services = { baslik: string; aciklama: string; liste: { ikon: string; baslik: string; aciklama: string }[] };
 type Brands = { baslik: string; aciklama: string; markalar: string[] };
@@ -70,7 +80,7 @@ export function UstaSite({ name, theme, sections }: UstaSiteData) {
   return (
     <div style={style} className="flex min-h-full flex-1 flex-col bg-white pb-16 text-slate-900 md:pb-0">
       <TopBar business={business} />
-      <Header name={name} cep={business.cep} navItems={navItems.map((d) => ({ key: d.key, label: d.navLabel! }))} />
+      <Header name={name} logo={business.logo ?? null} cep={business.cep} navItems={navItems.map((d) => ({ key: d.key, label: d.navLabel! }))} />
 
       <main className="flex-1">
         {ordered.map((section) => {
@@ -81,6 +91,8 @@ export function UstaSite({ name, theme, sections }: UstaSiteData) {
               return <HighlightsBlock key={section.key} data={content<Highlights>("one_cikanlar")} />;
             case "hizmetler":
               return <ServicesBlock key={section.key} data={content<Services>("hizmetler")} />;
+            case "galeri":
+              return <GalleryBlock key={section.key} data={content<Gallery>("galeri")} name={name} />;
             case "markalar":
               return <BrandsBlock key={section.key} data={content<Brands>("markalar")} />;
             case "surec":
@@ -158,14 +170,31 @@ function TopBar({ business }: { business: Business }) {
   );
 }
 
-function Header({ name, cep, navItems }: { name: string; cep: string; navItems: { key: string; label: string }[] }) {
+function Header({
+  name,
+  logo,
+  cep,
+  navItems,
+}: {
+  name: string;
+  logo: ImageValue | null;
+  cep: string;
+  navItems: { key: string; label: string }[];
+}) {
   const [first, ...rest] = name.split(" ");
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
       <Container className="flex h-16 items-center justify-between gap-4">
-        <a href="#" className="truncate text-lg font-extrabold uppercase tracking-tight">
-          {first} {rest.length > 0 && <span className="text-[var(--accent)]">{rest.join(" ")}</span>}
-        </a>
+        {logo ? (
+          <a href="#" className="flex h-11 shrink-0 items-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logo.srcSmall} alt={name} width={logo.width} height={logo.height} className="h-full w-auto max-w-48 object-contain" />
+          </a>
+        ) : (
+          <a href="#" className="truncate text-lg font-extrabold uppercase tracking-tight">
+            {first} {rest.length > 0 && <span className="text-[var(--accent)]">{rest.join(" ")}</span>}
+          </a>
+        )}
         <nav className="hidden items-center gap-6 text-sm font-semibold text-slate-700 lg:flex">
           {navItems.map((item) => (
             <a key={item.key} href={`#${item.key}`} className="hover:text-slate-950">
@@ -187,7 +216,21 @@ function Header({ name, cep, navItems }: { name: string; cep: string; navItems: 
 function HeroBlock({ hero, business, whatsappLink }: { hero: Hero; business: Business; whatsappLink: string }) {
   const rating = business.googlePuan;
   return (
-    <section className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 text-white">
+    <section className="relative isolate overflow-hidden bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 text-white">
+      {hero.gorsel && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={hero.gorsel.src}
+            srcSet={`${hero.gorsel.srcSmall} 640w, ${hero.gorsel.src} 1600w`}
+            sizes="100vw"
+            alt=""
+            fetchPriority="high"
+            className="absolute inset-0 -z-20 size-full object-cover"
+          />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-slate-950/95 via-slate-900/85 to-slate-900/60" />
+        </>
+      )}
       <Container className="grid gap-10 py-16 md:py-20 lg:grid-cols-[1.4fr_1fr] lg:items-center">
         <div>
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">
@@ -278,6 +321,34 @@ function ServicesBlock({ data }: { data: Services }) {
             </article>
           ))}
         </div>
+      </Container>
+    </section>
+  );
+}
+
+function GalleryBlock({ data, name }: { data: Gallery; name: string }) {
+  if (data.fotograflar.length === 0) return null;
+  return (
+    <section id="galeri" className="scroll-mt-16 bg-white py-16 md:py-20">
+      <Container>
+        <SectionHeading title={data.baslik} description={data.aciklama} />
+        <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+          {data.fotograflar.map((image, i) => (
+            <li key={image.id}>
+              <a href={image.src} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl bg-slate-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={image.srcSmall}
+                  alt={`${name} — ${data.baslik} ${i + 1}`}
+                  width={image.width}
+                  height={image.height}
+                  loading="lazy"
+                  className="aspect-square w-full object-cover transition-transform duration-300 hover:scale-105"
+                />
+              </a>
+            </li>
+          ))}
+        </ul>
       </Container>
     </section>
   );
