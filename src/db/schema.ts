@@ -185,6 +185,30 @@ export const media = pgTable(
   (t) => [index("media_site_id_idx").on(t.siteId)],
 );
 
+export const domainStatusEnum = pgEnum("domain_status", ["pending", "verified"]);
+
+// Müşterinin kendi domain'i. Ana domain (firmam.com) saklanır; www.firmam.com otomatik olarak ona yönlenir.
+// Alt alan adı (site.firmam.com) bağlanırsa www yönlendirmesi yapılmaz.
+export const domains = pgTable(
+  "domains",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    hostname: text("hostname").notNull().unique(),
+    status: domainStatusEnum("status").notNull().default("pending"),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    lastCheckedAt: timestamp("last_checked_at", { withTimezone: true }),
+    // Son kontrolde bulunan sorun (panelde kullanıcıya gösterilir)
+    lastError: text("last_error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("domains_site_id_idx").on(t.siteId)],
+);
+
+export type Domain = typeof domains.$inferSelect;
+
 export type SiteSnapshot = {
   name: string;
   theme: string;

@@ -1,6 +1,6 @@
-import { rootDomain, siteUrl } from "@/lib/config";
+import { rootDomain } from "@/lib/config";
 import { classifyHost } from "@/lib/hosts";
-import { getPublicSite } from "@/lib/sites";
+import { resolvePublicSite } from "@/lib/public-site";
 
 const protocol = rootDomain.startsWith("localhost") ? "http" : "https";
 
@@ -19,9 +19,11 @@ export async function GET(request: Request) {
 
   if (host.kind === "root") return sitemap([{ loc: `${protocol}://${rootDomain}/` }]);
 
-  if (host.kind === "site") {
-    const site = await getPublicSite(host.subdomain);
-    if (site) return sitemap([{ loc: `${siteUrl(host.subdomain)}/`, lastmod: site.publishedAt ?? undefined }]);
+  if (host.kind === "site" || host.kind === "custom") {
+    const result = await resolvePublicSite(host.kind === "site" ? host.subdomain : host.host);
+    // Asıl adres başka bir host ise site haritası oradan sunulur
+    if (result.kind === "redirect") return Response.redirect(`${result.to.replace(/\/$/, "")}/sitemap.xml`, 308);
+    if (result.kind === "site") return sitemap([{ loc: `${result.url}/`, lastmod: result.data.publishedAt ?? undefined }]);
   }
 
   return new Response("Bulunamadı", { status: 404 });

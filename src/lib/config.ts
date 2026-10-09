@@ -5,7 +5,14 @@ export const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:300
 
 export const panelSubdomain = "app";
 
-const protocol = rootDomain.startsWith("localhost") ? "http" : "https";
+export const protocol = rootDomain.startsWith("localhost") ? "http" : "https";
+
+// Ana domain, port olmadan: "localhost" veya "platformadi.com"
+export const rootHostname = rootDomain.split(":")[0];
+
+// Müşteri domain'lerinin yönlendirileceği sunucu. A kaydı bu IP'ye, alt alan adları CNAME ile cname.<ana-domain>'e.
+export const serverIpv4 = process.env.PLATFORM_SERVER_IP ?? "";
+export const cnameTarget = `cname.${rootHostname}`;
 
 export const panelUrl = `${protocol}://${panelSubdomain}.${rootDomain}`;
 

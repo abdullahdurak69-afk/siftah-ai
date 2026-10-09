@@ -1,8 +1,9 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { and, asc, eq, gt } from "drizzle-orm";
+import { and, asc, eq, gt, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { previewLinks, siteSections, siteVersions, sites } from "@/db/schema";
+import { domains, previewLinks, siteSections, siteVersions, sites } from "@/db/schema";
+import { protocol, siteUrl } from "@/lib/config";
 import type { SectionRow } from "@/templates/engine/types";
 
 export function siteCacheTag(subdomain: string) {
@@ -13,7 +14,13 @@ export type RenderableSite = {
   site: { id: string; name: string; sector: (typeof sites.$inferSelect)["sector"]; theme: string; profession: string | null };
   sections: SectionRow[];
   publishedAt: Date | null;
+  // Doğrulanmış custom domain varsa sitenin asıl adresi odur
+  domain?: string | null;
 };
+
+export function siteBaseUrl(subdomain: string, domain?: string | null) {
+  return domain ? `${protocol}://${domain}` : siteUrl(subdomain);
+}
 
 // Ziyaretçiye gösterilen site: her zaman yayındaki sürümün anlık görüntüsü. Yayınlanınca etiket yenilenir.
 export async function getPublicSite(subdomain: string): Promise<RenderableSite | null> {
@@ -28,9 +35,11 @@ export async function getPublicSite(subdomain: string): Promise<RenderableSite |
       status: sites.status,
       snapshot: siteVersions.snapshot,
       publishedAt: siteVersions.createdAt,
+      domain: domains.hostname,
     })
     .from(sites)
     .innerJoin(siteVersions, eq(siteVersions.id, sites.publishedVersionId))
+    .leftJoin(domains, and(eq(domains.siteId, sites.id), eq(domains.status, "verified")))
     .where(eq(sites.subdomain, subdomain))
     .limit(1);
 
@@ -42,6 +51,7 @@ export async function getPublicSite(subdomain: string): Promise<RenderableSite |
     site: { id: row.id, sector: row.sector, name: snapshot.name, theme: snapshot.theme, profession: snapshot.profession },
     sections: snapshot.sections,
     publishedAt: row.publishedAt,
+    domain: row.domain,
   };
 }
 
@@ -67,7 +77,7 @@ export async function getSiteByPreviewToken(subdomain: string, token: string): P
     .select({ id: sites.id, name: sites.name, sector: sites.sector, theme: sites.theme, profession: sites.profession })
     .from(previewLinks)
     .innerJoin(sites, eq(sites.id, previewLinks.siteId))
-    .where(and(eq(previewLinks.token, token), eq(sites.subdomain, subdomain), gt(previewLinks.expiresAt, new Date())))
+    .where(and(eq(previewLinks.token, token), eq(sites.subdomain, subdomain), gt(previewLinks.expiresAt, sql`now()`)))
     .limit(1);
 
   if (!site) return null;

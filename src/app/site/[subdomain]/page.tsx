@@ -1,23 +1,22 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { siteUrl } from "@/lib/config";
-import { getPublicSite } from "@/lib/sites";
+import { loadPublicSite } from "@/lib/public-site";
 import { SiteRenderer, siteMetadata } from "@/templates/render";
 
-// Site bulunamazsa gerçek bir 404 dönebilmek için sayfa, içerik hazır olana kadar bekler (streaming yok)
+// Host çözümleme, 404 ve yönlendirmeler proxy'de yapılır (src/lib/host-routing.ts); buraya sadece
+// yayında olan sitelerin istekleri gelir. Aşağıdaki kontroller ikinci bir güvenlik katmanıdır.
 export const instant = false;
 
 export async function generateMetadata({ params }: PageProps<"/site/[subdomain]">): Promise<Metadata> {
   const { subdomain } = await params;
-  const data = await getPublicSite(subdomain);
-  return data ? siteMetadata(data, siteUrl(subdomain)) : {};
+  const result = await loadPublicSite(subdomain);
+  return result ? siteMetadata(result.data, result.url) : {};
 }
 
 export default async function SitePage({ params }: PageProps<"/site/[subdomain]">) {
   const { subdomain } = await params;
-  // Sadece yayındaki sürüm gösterilir; hiç yayınlanmamış veya askıdaki siteler 404
-  const data = await getPublicSite(subdomain);
-  if (!data) notFound();
+  const result = await loadPublicSite(subdomain);
+  if (!result) notFound();
 
-  return <SiteRenderer data={data} url={siteUrl(subdomain)} />;
+  return <SiteRenderer data={result.data} url={result.url} />;
 }

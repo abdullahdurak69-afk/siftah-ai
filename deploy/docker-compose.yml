@@ -1,0 +1,76 @@
+# Sunucuda proje kökünden çalıştırılır:
+#   docker compose -f deploy/docker-compose.yml --env-file .env up -d --build
+name: site-platform
+
+x-app-build: &app-build
+  context: ..
+  dockerfile: deploy/Dockerfile
+  args:
+    NEXT_PUBLIC_ROOT_DOMAIN: ${NEXT_PUBLIC_ROOT_DOMAIN}
+    NEXT_PUBLIC_PLATFORM_NAME: ${NEXT_PUBLIC_PLATFORM_NAME}
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: site_platform
+      POSTGRES_USER: site_platform
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Veritabanı dışarıya açık değildir; sadece uygulama konteynerleri erişir
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U site_platform -d site_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Her güncellemede veritabanı şemasını günceller, sonra kapanır
+  migrate:
+    build:
+      <<: *app-build
+      target: builder
+    command: npm run db:migrate
+    env_file: ../.env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build: *app-build
+    restart: unless-stopped
+    env_file: ../.env
+    volumes:
+      - media:/app/.media
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  caddy:
+    build:
+      context: .
+      dockerfile: Dockerfile.caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      ROOT_DOMAIN: ${ROOT_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+      CADDY_ASK_SECRET: ${CADDY_ASK_SECRET}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
+  media:
+  caddy_data:
+  caddy_config:

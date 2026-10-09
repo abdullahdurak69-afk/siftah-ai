@@ -10,7 +10,7 @@ type Item = { key: string; title: string; optional: boolean; enabled: boolean };
 export function SectionNav({ siteId, items }: { siteId: string; items: Item[] }) {
   // ["bolum", "<key>"] ya da [] (genel bakış)
   const segments = useSelectedLayoutSegments();
-  const activeKey = segments[0] === "bolum" ? segments[1] : segments.length === 0 ? "" : null;
+  const activeKey = segments[0] === "bolum" ? segments[1] : segments.length === 0 ? "" : segments[0] === "domain" ? "domain" : null;
   const navRef = useRef<HTMLElement>(null);
 
   // Mobilde menü yatay kayar; aktif bölüm görünür alana getirilir
@@ -26,6 +26,9 @@ export function SectionNav({ siteId, items }: { siteId: string; items: Item[] })
       <ul className="flex gap-1 md:flex-col">
         <NavLink href={`/siteler/${siteId}`} active={activeKey === ""}>
           Genel bakış
+        </NavLink>
+        <NavLink href={`/siteler/${siteId}/domain`} active={activeKey === "domain"}>
+          Domain
         </NavLink>
         {items.map((item) => (
           <NavLink key={item.key} href={`/siteler/${siteId}/bolum/${item.key}`} active={activeKey === item.key}>

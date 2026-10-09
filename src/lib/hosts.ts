@@ -8,5 +8,6 @@ export function classifyHost(rawHost: string | null): HostKind {
   if (host === rootDomain || host === `www.${rootDomain}`) return { kind: "root" };
   if (host === `${panelSubdomain}.${rootDomain}`) return { kind: "panel" };
   if (host.endsWith(`.${rootDomain}`)) return { kind: "site", subdomain: host.slice(0, -(rootDomain.length + 1)) };
-  return { kind: "custom", host };
+  // Custom domain'ler portsuz eşlenir (geliştirmede "firmam.test:3000" gibi gelebilir)
+  return { kind: "custom", host: host.split(":")[0] };
 }

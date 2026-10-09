@@ -1,0 +1,34 @@
+{
+	email {$ACME_EMAIL}
+
+	# Müşteri domain'lerine sertifika almadan önce uygulamaya sorulur:
+	# sadece panelde eklenmiş ve DNS'i doğrulanmış domain'ler onay alır.
+	on_demand_tls {
+		ask http://app:3000/api/tls-izin?key={$CADDY_ASK_SECRET}
+	}
+}
+
+# Platform: tanıtım sitesi, panel (app.) ve tüm müşteri subdomain'leri.
+# Tek wildcard sertifika; Let's Encrypt kotasına takılmadan sınırsız subdomain.
+{$ROOT_DOMAIN}, *.{$ROOT_DOMAIN} {
+	tls {
+		dns cloudflare {$CLOUDFLARE_API_TOKEN}
+	}
+	encode zstd gzip
+	reverse_proxy app:3000
+}
+
+# Müşterilerin kendi domain'leri (firmam.com, www.firmam.com, site.firmam.com...).
+# Sertifika ilk ziyarette birkaç saniye içinde otomatik alınır ve yenilenir.
+https:// {
+	tls {
+		on_demand
+	}
+	encode zstd gzip
+	reverse_proxy app:3000
+}
+
+# HTTP'den gelen her isteği HTTPS'e yönlendir
+http:// {
+	redir https://{host}{uri} permanent
+}

@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Docker imajı için sadece gereken dosyaları içeren bağımsız çıktı (deploy/Dockerfile)
+  output: "standalone",
   /* config options here */
   cacheComponents: true,
   partialPrefetching: true,

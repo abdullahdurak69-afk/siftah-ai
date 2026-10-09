@@ -25,6 +25,18 @@ Yönlendirme `src/proxy.ts` içinde yapılır. Platform adı ve ana domain `.env
   Canlıda Cloudflare R2 / S3'e geçmek için sadece bu dosya değişir.
 - Kaydederken içerikteki her fotoğraf veritabanından doğrulanır; başka siteye ait fotoğraflar atılır.
 
+## Domain'ler
+
+- Müşteri panelde domain'ini ekler (`/siteler/<id>/domain`), DNS talimatlarını görür ve "Kontrol et" ile doğrular.
+  Bekleyen domain'ler sunucuda 10 dakikada bir kontrol edilir (`/api/cron/domains`).
+- Host çözümleme `src/proxy.ts` + `src/lib/host-routing.ts` içinde, sayfa çizilmeden önce yapılır; böylece
+  bulunamayan siteler gerçek 404, `www` ve subdomain'den asıl domain'e geçişler gerçek 308 döner.
+- SSL: Caddy, müşteri domain'lerine sertifikayı ilk ziyarette alır; önce `/api/tls-izin` ucuna sorar.
+
+## Sunucu
+
+Kurulum adımları: [deploy/KURULUM.md](deploy/KURULUM.md) (Docker Compose + Caddy + PostgreSQL, gece yedeği).
+
 ## Teknoloji
 
 - Next.js 16 (App Router, Cache Components), Tailwind CSS

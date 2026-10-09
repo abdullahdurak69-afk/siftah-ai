@@ -1,6 +1,6 @@
-import { rootDomain, siteUrl } from "@/lib/config";
+import { rootDomain } from "@/lib/config";
 import { classifyHost } from "@/lib/hosts";
-import { getPublicSite } from "@/lib/sites";
+import { resolvePublicSite } from "@/lib/public-site";
 
 const protocol = rootDomain.startsWith("localhost") ? "http" : "https";
 
@@ -25,11 +25,13 @@ export async function GET(request: Request) {
   switch (host.kind) {
     case "root":
       return text(allowAll(`${protocol}://${rootDomain}/sitemap.xml`));
-    case "site": {
-      // Taslak ve askıdaki siteler Google'a kapalı
-      const site = await getPublicSite(host.subdomain);
-      if (!site) return text(disallowAll);
-      return text(allowAll(`${siteUrl(host.subdomain)}/sitemap.xml`, ["/onizleme/"]));
+    case "site":
+    case "custom": {
+      // Taslak ve askıdaki siteler Google'a kapalı. Site maps her zaman asıl adresi (custom domain varsa onu) gösterir.
+      const result = await resolvePublicSite(host.kind === "site" ? host.subdomain : host.host);
+      if (result.kind === "not-found") return text(disallowAll);
+      const base = result.kind === "site" ? result.url : result.to.replace(/\/$/, "");
+      return text(allowAll(`${base}/sitemap.xml`, ["/onizleme/"]));
     }
     default:
       return text(disallowAll);
