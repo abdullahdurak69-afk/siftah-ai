@@ -18,7 +18,7 @@ const createSiteSchema = z.object({
 });
 
 export type CreateSiteState = {
-  done?: boolean;
+  siteId?: string;
   errors?: Partial<Record<"name" | "subdomain" | "sector" | "form", string>>;
   values?: { name?: string; subdomain?: string; sector?: string };
 };
@@ -49,13 +49,15 @@ export async function createSite(_prev: CreateSiteState, formData: FormData): Pr
     return { errors: { subdomain: "Bu adres kullanılamaz, başka bir adres seçin." }, values };
   }
 
+  let siteId: string;
   try {
-    await db.transaction(async (tx) => {
+    siteId = await db.transaction(async (tx) => {
       const [site] = await tx.insert(sites).values({ name, subdomain, sector }).returning({ id: sites.id });
       // Süper admin müşteri adına açıyorsa üye olmaz; müşteri sonradan davet edilir (5. faz)
       if (!user.isSuperAdmin) {
         await tx.insert(siteMembers).values({ siteId: site.id, userId: user.id, role: "owner" });
       }
+      return site.id;
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
@@ -65,7 +67,7 @@ export async function createSite(_prev: CreateSiteState, formData: FormData): Pr
   }
 
   // Yönlendirme istemcide yapılır: server action içindeki redirect, host bazlı proxy yönlendirmesinden geçmez
-  return { done: true };
+  return { siteId };
 }
 
 function isUniqueViolation(error: unknown) {

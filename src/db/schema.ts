@@ -1,6 +1,8 @@
 import {
   boolean,
   index,
+  integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -86,6 +88,10 @@ export const sites = pgTable("sites", {
   subdomain: text("subdomain").notNull().unique(),
   sector: sectorEnum("sector").notNull(),
   status: siteStatusEnum("status").notNull().default("draft"),
+  // Usta şablonunda meslek ön ayarı (tv-uydu, su-tesisat...); kurulum sihirbazında seçilir
+  profession: text("profession"),
+  theme: text("theme").notNull().default("turuncu"),
+  setupCompletedAt: timestamp("setup_completed_at", { withTimezone: true }),
   subscriptionEndsAt: timestamp("subscription_ends_at", { withTimezone: true }),
   ...timestamps,
 });
@@ -103,6 +109,25 @@ export const siteMembers = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.siteId, t.userId] }), index("site_members_user_id_idx").on(t.userId)],
+);
+
+// Sitenin bölümleri ve taslak içeriği. İçerik, şablonun şemasına göre doğrulanmış JSON'dur.
+export const siteSections = pgTable(
+  "site_sections",
+  {
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    position: integer("position").notNull(),
+    enabled: boolean("enabled").notNull().default(true),
+    content: jsonb("content").$type<Record<string, unknown>>().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [primaryKey({ columns: [t.siteId, t.key] })],
 );
 
 export type Site = typeof sites.$inferSelect;

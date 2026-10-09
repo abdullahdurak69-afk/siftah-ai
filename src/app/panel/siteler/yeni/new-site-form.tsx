@@ -3,7 +3,8 @@
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, FormError, Input, Select } from "@/components/form";
-import { sectors } from "@/lib/config";
+import { sectors, type Sector } from "@/lib/config";
+import { hasTemplate } from "@/templates/registry";
 import { toSubdomain } from "@/lib/slug";
 import { createSite, type CreateSiteState } from "./actions";
 
@@ -16,11 +17,11 @@ export function NewSiteForm({ rootDomain }: { rootDomain: string }) {
   const [subdomainTouched, setSubdomainTouched] = useState(Boolean(state.values?.subdomain));
 
   useEffect(() => {
-    if (state.done) {
-      router.push("/");
+    if (state.siteId) {
+      router.push(`/siteler/${state.siteId}/kurulum`);
       router.refresh();
     }
-  }, [state.done, router]);
+  }, [state.siteId, router]);
 
   return (
     <form action={formAction} className="flex flex-col gap-5 rounded-xl border border-slate-200 bg-white p-6">
@@ -62,15 +63,18 @@ export function NewSiteForm({ rootDomain }: { rootDomain: string }) {
 
       <Field label="Sektör" error={state.errors?.sector}>
         <Select name="sector" required defaultValue={state.values?.sector ?? "usta"}>
-          {Object.entries(sectors).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
+          {Object.entries(sectors).map(([value, label]) => {
+            const ready = hasTemplate(value as Sector);
+            return (
+              <option key={value} value={value} disabled={!ready}>
+                {ready ? label : `${label} (yakında)`}
+              </option>
+            );
+          })}
         </Select>
       </Field>
 
-      <Button type="submit" disabled={pending || state.done}>
+      <Button type="submit" disabled={pending || Boolean(state.siteId)}>
         {pending ? "Oluşturuluyor…" : "Siteyi oluştur"}
       </Button>
     </form>

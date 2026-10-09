@@ -54,11 +54,19 @@ async function SiteList() {
           const url = siteUrl(site.subdomain);
           return (
             <li key={site.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-              <div className="min-w-0">
+              <Link href={`/siteler/${site.id}`} className="min-w-0 hover:underline">
                 <p className="font-medium">{site.name}</p>
                 <p className="text-sm text-slate-500">{sectors[site.sector]}</p>
-              </div>
+              </Link>
               <div className="flex items-center gap-3 text-sm">
+                {site.sector === "usta" && !site.setupCompletedAt && (
+                  <Link
+                    href={`/siteler/${site.id}/kurulum`}
+                    className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 hover:bg-amber-200"
+                  >
+                    Kurulumu tamamla
+                  </Link>
+                )}
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${status.className}`}>
                   {status.text}
                 </span>
