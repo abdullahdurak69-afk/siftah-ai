@@ -90,6 +90,9 @@ GitHub (özel): https://github.com/abdullahdurak69-afk/siftah-ai — yeni faz da
   yönlendirme bu yüzden çalışmaz.
 - Tanıtım sayfaları derlemede statik üretilir: orada okunan env'ler (SUPPORT_*, *_SITE_VERIFICATION) Docker build
   argümanı olarak da verilmeli.
+- Giriş/çıkıştan sonra `router.push` kullanma: production'da yönlendirici giriş öncesi önceden yüklediği (proxy'nin
+  /giris'e yönlendirdiği) sayfayı önbellekten kullanıyor ve giriş ekranında takılıyor. Tam sayfa geçişi
+  (`window.location.assign`) kullan. Dev modunda önceden yükleme olmadığı için görünmez.
 - Tarayıcı oturum çerezleri port ayırt etmez: 3000'de açık panel oturumu 3100'deki üretim testinde de geçerlidir.
 - Route grubu taşıma gibi yapısal değişikliklerden sonra dev sunucusu eski modülü tutabilir: yeniden başlat.
 - Şifre/secret değerlerini okumak otomatik mod tarafından engelleniyor; test hesaplarını tarayıcıda rastgele

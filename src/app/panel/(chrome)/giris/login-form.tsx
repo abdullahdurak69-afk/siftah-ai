@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Button, Field, FormError, Input } from "@/components/form";
 
 export function LoginForm() {
-  const router = useRouter();
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
 
@@ -27,8 +25,10 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/");
-    router.refresh();
+    // Tam sayfa geçişi: istemci yönlendiricisi giriş öncesi önceden yüklediği (girişe yönlendiren) panel sayfasını
+    // önbellekten kullanıyor ve production'da giriş ekranında takılı kalıyordu
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- oturum değişti, tam yenileme gerekli
+    window.location.assign("/");
   }
 
   return (
