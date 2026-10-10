@@ -6,7 +6,7 @@ set -euo pipefail
 STAMP="${1:?Yedek zamanını verin, ör. 2026-10-09_0330}"
 cd "$(dirname "$0")/.."
 COMPOSE="docker compose -f deploy/docker-compose.yml --env-file .env"
-REMOTE="${BACKUP_REMOTE:-yedek:site-platform-yedek}"
+. deploy/r2.sh   # REMOTE: yedek deposu (R2)
 DIR="/var/backups/site-platform"
 
 mkdir -p "$DIR"

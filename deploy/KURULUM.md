@@ -100,9 +100,14 @@ Kontrol: `https://app.siftahai.com` açılmalı ve geçerli bir sertifikası olm
 
 ## 6. Yedekleme ve zamanlanmış görevler
 
+R2 bağlantısı: Cloudflare R2'de bir bucket (ör. `siftah-yedek`, yetki alanı EU) ve sadece o bucket'a
+"Object Read & Write" yetkili bir API anahtarı oluştur; bilgileri `.env`'deki `R2_*` satırlarına yaz
+(`deploy/r2.sh` okur, `rclone config` gerekmez).
+
 ```bash
-# R2 bağlantısı (Cloudflare R2 → Manage API Tokens ile alınan bilgilerle)
-rclone config   # adı "yedek" olan, türü "s3", sağlayıcısı "Cloudflare" bir uzak depo oluştur
+sudo mkdir -p /var/backups/site-platform && sudo chown ubuntu: /var/backups/site-platform
+sudo touch /var/log/site-platform-backup.log && sudo chown ubuntu: /var/log/site-platform-backup.log
+deploy/backup.sh   # ilk yedeği elle al, R2'de iki dosya görünmeli
 
 crontab -e
 ```

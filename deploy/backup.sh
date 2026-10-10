@@ -5,7 +5,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 COMPOSE="docker compose -f deploy/docker-compose.yml --env-file .env"
-REMOTE="${BACKUP_REMOTE:-yedek:site-platform-yedek}"   # rclone config'deki uzak depo adı
+. deploy/r2.sh   # REMOTE: yedek deposu (R2)
 STAMP="$(date +%Y-%m-%d_%H%M)"
 DIR="/var/backups/site-platform"
 KEEP_DAYS=30
