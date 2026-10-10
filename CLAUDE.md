@@ -20,7 +20,8 @@ Kullanıcıyla Türkçe konuş. Kod yorumları ve arayüz metinleri Türkçe. B�
 | 6 Restoran (+QR menü), kuaför, klinik şablonları; şablon altyapısı genelleştirildi | bitti | faz-6-sablonlar |
 | 7 Domain zorunluluğu (7a); tanıtım sitesi, SEO/GEO, llms.txt, başvuru formu (7b) | bitti | faz-7-tanitim |
 
-Dallar zincirleme (her biri bir öncekinin üstünde), main'e henüz birleştirilmedi.
+Dallar zincirleme (her biri bir öncekinin üstünde); 7. faz sonunda main'e birleştirildi (fast-forward).
+GitHub (özel): https://github.com/abdullahdurak69-afk/siftah-ai — yeni faz dalları main'den açılır.
 
 ## Kararlar
 
@@ -52,7 +53,7 @@ Dallar zincirleme (her biri bir öncekinin üstünde), main'e henüz birleştiri
 
 - Marka vekili görüşü: "siftahla" tescili karşısında Siftah AI (gerekirse devir/lisans görüşmesi)
 - VPS, platform domain'i, Cloudflare + R2 hesabı (deploy/KURULUM.md 1–3)
-- Özel GitHub deposu (kodu sunucuya çekmek için) ve sunucuya SSH anahtar erişimi
+- Sunucuya SSH anahtar erişimi (özel GitHub deposu hazır; sunucunun çekebilmesi için deploy key gerekecek)
 - Yıllık fiyat (`src/content/pricing.ts` → `yearlyPrice`; boşken sitede "fiyat için ulaşın" yazar) ve domain
   ücretinin aboneliğe dahil olup olmadığı
 - Firma bilgileri (`src/content/legal-info.ts`) ve yasal metinlerin avukat kontrolü; askı sonrası veri saklama
