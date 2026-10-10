@@ -1,5 +1,5 @@
 {
-	email {$ACME_EMAIL}
+	# Sertifikalar e-posta adresi olmadan alınır (Let's Encrypt 2025'te süre uyarı e-postalarını kaldırdı)
 
 	# Müşteri domain'lerine sertifika almadan önce uygulamaya sorulur:
 	# sadece panelde eklenmiş ve DNS'i doğrulanmış domain'ler onay alır.

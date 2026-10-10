@@ -62,7 +62,6 @@ services:
     environment:
       ROOT_DOMAIN: ${ROOT_DOMAIN}
       ALT_DOMAIN: ${ALT_DOMAIN}
-      ACME_EMAIL: ${ACME_EMAIL}
       CADDY_ASK_SECRET: ${CADDY_ASK_SECRET}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
