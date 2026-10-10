@@ -3,7 +3,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { and, asc, eq, gt, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { domains, previewLinks, siteSections, siteVersions, sites } from "@/db/schema";
-import { protocol, siteUrl } from "@/lib/config";
+import { protocol, siteUrl, subdomainSitesEnabled } from "@/lib/config";
 import type { SectionRow } from "@/templates/engine/types";
 
 export function siteCacheTag(subdomain: string) {
@@ -20,6 +20,22 @@ export type RenderableSite = {
 
 export function siteBaseUrl(subdomain: string, domain?: string | null) {
   return domain ? `${protocol}://${domain}` : siteUrl(subdomain);
+}
+
+// Ziyaretçinin siteye ulaştığı adres: doğrulanmış domain. Domain yoksa site dışarıya kapalıdır (null);
+// sadece geliştirme bayrağı açıkken subdomain adresi döner.
+export function publicSiteUrl(subdomain: string, domain: string | null | undefined) {
+  if (domain) return `${protocol}://${domain}`;
+  return subdomainSitesEnabled ? siteUrl(subdomain) : null;
+}
+
+export async function getVerifiedDomain(siteId: string) {
+  const [row] = await db
+    .select({ hostname: domains.hostname })
+    .from(domains)
+    .where(and(eq(domains.siteId, siteId), eq(domains.status, "verified")))
+    .limit(1);
+  return row?.hostname ?? null;
 }
 
 // Ziyaretçiye gösterilen site: her zaman yayındaki sürümün anlık görüntüsü. Yayınlanınca etiket yenilenir.
@@ -69,17 +85,25 @@ export async function getDraftSections(siteId: string): Promise<SectionRow[]> {
     .orderBy(asc(siteSections.position));
 }
 
-// Paylaşılabilir önizleme linki: token geçerliyse ve bu subdomain'e aitse taslağı döner
-export async function getSiteByPreviewToken(subdomain: string, token: string): Promise<RenderableSite | null> {
+// Paylaşılabilir önizleme linki (ana domain'de /onizleme/<token>): token geçerliyse taslağı döner
+export async function getSiteByPreviewToken(token: string): Promise<(RenderableSite & { subdomain: string }) | null> {
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) return null;
 
   const [site] = await db
-    .select({ id: sites.id, name: sites.name, sector: sites.sector, theme: sites.theme, profession: sites.profession })
+    .select({
+      id: sites.id,
+      name: sites.name,
+      sector: sites.sector,
+      theme: sites.theme,
+      profession: sites.profession,
+      subdomain: sites.subdomain,
+    })
     .from(previewLinks)
     .innerJoin(sites, eq(sites.id, previewLinks.siteId))
-    .where(and(eq(previewLinks.token, token), eq(sites.subdomain, subdomain), gt(previewLinks.expiresAt, sql`now()`)))
+    .where(and(eq(previewLinks.token, token), gt(previewLinks.expiresAt, sql`now()`)))
     .limit(1);
 
   if (!site) return null;
-  return { site, sections: await getDraftSections(site.id), publishedAt: null };
+  const { subdomain, ...rest } = site;
+  return { site: rest, subdomain, sections: await getDraftSections(site.id), publishedAt: null };
 }

@@ -4,9 +4,12 @@ import { db } from "@/db";
 import { domains } from "@/db/schema";
 import { notFound } from "next/navigation";
 import { canManage, getEditableSite } from "@/lib/dal";
-import { protocol, siteUrl } from "@/lib/config";
+import { protocol } from "@/lib/config";
 import { dnsInstructions, isApexDomain } from "@/lib/domains";
-import { AddDomainForm, DomainActions } from "./domain-forms";
+import { formatDate, toIsoDate } from "@/lib/subscription";
+import { domainDaysLeft } from "@/lib/domain-renewals";
+import { requestNow } from "@/lib/request-time";
+import { AddDomainForm, DomainActions, DomainExpiryForm } from "./domain-forms";
 
 export const metadata: Metadata = { title: "Domain", robots: { index: false } };
 export const instant = false;
@@ -16,30 +19,26 @@ export default async function DomainPage({ params }: PageProps<"/panel/siteler/[
   const { site, role, publishedAt } = await getEditableSite(id);
   if (!canManage(role)) notFound();
   const [domain] = await db.select().from(domains).where(eq(domains.siteId, site.id));
-  const subdomainUrl = siteUrl(site.subdomain);
+  const isSuperAdmin = role === "admin";
+  const now = await requestNow();
 
   return (
     <div className="flex flex-col gap-4">
       <div>
         <h2 className="text-xl font-semibold tracking-tight">Domain</h2>
-        <p className="mt-1 text-slate-600">Sitenizi kendi domain&apos;inizde (ör. firmaniz.com) yayınlayın.</p>
-      </div>
-
-      <Card>
-        <p className="text-sm text-slate-500">Ücretsiz adresiniz</p>
-        <p className="font-medium">{subdomainUrl.replace(/^https?:\/\//, "")}</p>
-        <p className="mt-1 text-sm text-slate-500">
-          {domain?.status === "verified"
-            ? "Bu adrese gelen ziyaretçiler otomatik olarak kendi domain'inize yönlendirilir."
-            : "Kendi domain'inizi bağlasanız da bu adres çalışmaya devam eder."}
+        <p className="mt-1 text-slate-600">
+          Siteniz sadece kendi domain&apos;inizde (ör. firmaniz.com) yayınlanır. Domain bağlanana kadar içerikleri
+          düzenleyip önizleyebilirsiniz.
         </p>
-      </Card>
+      </div>
 
       {!domain ? (
         <Card>
-          <h3 className="font-semibold">Kendi domain&apos;inizi bağlayın</h3>
+          <h3 className="font-semibold">Domain&apos;i bağlayın</h3>
           <p className="mt-1 text-sm text-slate-600">
-            Domain&apos;inizi henüz almadıysanız Natro, İsimtescil, Turhost veya GoDaddy gibi bir firmadan alabilirsiniz.
+            {isSuperAdmin
+              ? "Domain'i müşteri adına, onun firma bilgileriyle alıp buraya girin. Böylece domain hukuken müşterinin olur."
+              : "Domain'inizi sizin adınıza biz alıp bağlayabiliriz. Kendiniz aldıysanız buraya yazın."}
           </p>
           <div className="mt-4">
             <AddDomainForm siteId={site.id} />
@@ -89,10 +88,42 @@ export default async function DomainPage({ params }: PageProps<"/panel/siteler/[
             )}
           </Card>
 
+          {(isSuperAdmin || domain.expiresAt) && (
+            <Card>
+              <h3 className="font-semibold">Domain kaydı</h3>
+              {domain.expiresAt ? (
+                <ExpiryLine expiresAt={domain.expiresAt} now={now.getTime()} />
+              ) : (
+                <p className="mt-1 text-sm text-slate-600">Bitiş tarihi girilmedi; yenileme hatırlatması gitmez.</p>
+              )}
+              {isSuperAdmin ? (
+                <div className="mt-3">
+                  <p className="mb-2 text-sm text-slate-600">
+                    Domain&apos;i yenilediğinizde yeni bitiş tarihini girin. Bitişe 30, 7 ve 1 gün kala size e-posta gelir.
+                  </p>
+                  <DomainExpiryForm siteId={site.id} current={domain.expiresAt ? toIsoDate(domain.expiresAt) : ""} />
+                </div>
+              ) : (
+                <p className="mt-1 text-sm text-slate-500">Domain yenilemesini biz takip ediyoruz.</p>
+              )}
+            </Card>
+          )}
+
           {domain.status !== "verified" && <DnsSteps hostname={domain.hostname} />}
         </>
       )}
     </div>
+  );
+}
+
+function ExpiryLine({ expiresAt, now }: { expiresAt: Date; now: number }) {
+  const days = domainDaysLeft(expiresAt, now);
+  const tone = days < 0 ? "text-red-700" : days <= 30 ? "text-amber-700" : "text-slate-700";
+  const left = days < 0 ? "süresi doldu" : days === 0 ? "bugün bitiyor" : `${days} gün kaldı`;
+  return (
+    <p className={`mt-1 text-sm ${tone}`}>
+      Bitiş: <strong>{formatDate(expiresAt)}</strong> ({left})
+    </p>
   );
 }
 

@@ -36,6 +36,20 @@
       "when": 1791580425714,
       "tag": "0004_safe_luminals",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791617161529,
+      "tag": "0005_bent_jubilee",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791617719073,
+      "tag": "0006_late_shotgun",
+      "breakpoints": true
     }
   ]
 }

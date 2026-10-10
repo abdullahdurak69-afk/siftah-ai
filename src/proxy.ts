@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
+import { sectors } from "@/lib/config";
 import { classifyHost } from "@/lib/hosts";
-import { routeCustomHost, routeSubdomain, type HostRoute } from "@/lib/host-routing";
+import { previewTokenExists, routeCustomHost, routeSubdomain, type HostRoute } from "@/lib/host-routing";
 
 // Panelde girişsiz açılabilen sayfalar
 const publicPanelPaths = ["/giris", "/sifremi-unuttum", "/sifre-belirle"];
@@ -34,10 +35,10 @@ function siteResponse(request: NextRequest, route: HostRoute, rest: string) {
 }
 
 // Gelen isteğin host'una bakıp doğru bölüme yönlendirir:
-//   platformadi.com           -> tanıtım sitesi (app/ kökü)
+//   platformadi.com           -> tanıtım sitesi (app/ kökü) ve paylaşılan önizleme linkleri (/onizleme/<token>)
 //   app.platformadi.com       -> CMS paneli (app/panel)
-//   firma.platformadi.com     -> müşteri sitesi (app/site/[subdomain]); custom domain'i varsa oraya 308
 //   firmam.com (custom)       -> müşteri sitesi (domains tablosundan çözülür); www -> ana domain 308
+//   firma.platformadi.com     -> sitenin iç adresi: domain'i varsa oraya 308, yoksa 404 (DEV_SUBDOMAIN_SITES=1 hariç)
 export async function proxy(request: NextRequest) {
   const host = classifyHost(request.headers.get("host"));
   const { pathname } = request.nextUrl;
@@ -47,6 +48,16 @@ export async function proxy(request: NextRequest) {
     case "root":
       // İç rotalar ana domain'den doğrudan açılamaz
       if (pathname.startsWith("/panel") || pathname.startsWith("/site")) {
+        return rewriteTo(request, "/404");
+      }
+      // Örnek siteler sadece şablonu olan sektörler için var; menü sayfası sadece restoran örneğinde
+      if (pathname.startsWith("/ornekler/")) {
+        const [, , sector, sub, ...more] = pathname.split("/");
+        const valid = sector in sectors && more.length === 0 && (!sub || (sub === "menu" && sector === "restoran"));
+        if (!valid) return rewriteTo(request, "/404");
+      }
+      // Süresi dolmuş veya hatalı önizleme linki gerçek 404 döner
+      if (pathname.startsWith("/onizleme/") && !(await previewTokenExists(pathname.slice("/onizleme/".length)))) {
         return rewriteTo(request, "/404");
       }
       return NextResponse.next();
@@ -62,8 +73,6 @@ export async function proxy(request: NextRequest) {
       return rewriteTo(request, `/panel${rest}`);
 
     case "site":
-      // Önizleme linkleri taslak siteleri gösterir; token kontrolünü sayfa yapar
-      if (pathname.startsWith("/onizleme/")) return rewriteTo(request, `/site/${host.subdomain}${rest}`);
       return siteResponse(request, await routeSubdomain(host.subdomain), rest);
 
     case "custom":

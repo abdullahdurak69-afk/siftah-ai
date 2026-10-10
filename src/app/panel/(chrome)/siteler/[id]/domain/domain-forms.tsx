@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { Button, FormError, Input } from "@/components/form";
-import { addDomain, checkDomain, removeDomain } from "./actions";
+import { addDomain, checkDomain, removeDomain, setDomainExpiry } from "./actions";
 
 export function AddDomainForm({ siteId }: { siteId: string }) {
   const router = useRouter();
@@ -51,7 +51,7 @@ export function DomainActions({ siteId, verified }: { siteId: string; verified: 
   const [result, setResult] = useState<{ ok: boolean; text: string; warnings?: string[] }>();
 
   function run(kind: "check" | "remove") {
-    if (kind === "remove" && !confirm("Domain bağlantısı kaldırılacak. Siteniz ücretsiz adresinizde çalışmaya devam eder. Emin misiniz?")) return;
+    if (kind === "remove" && !confirm("Domain bağlantısı kaldırılacak ve siteniz ziyaretçilere kapanacak. Emin misiniz?")) return;
     setAction(kind);
     setResult(undefined);
     startTransition(async () => {
@@ -101,5 +101,38 @@ export function DomainActions({ siteId, verified }: { siteId: string; verified: 
         </div>
       )}
     </div>
+  );
+}
+
+// Süper admin: domain kaydının bitiş tarihi (yenileme hatırlatmaları bu tarihe göre gider)
+export function DomainExpiryForm({ siteId, current }: { siteId: string; current: string }) {
+  const router = useRouter();
+  const [value, setValue] = useState(current);
+  const [message, setMessage] = useState<{ ok: boolean; text: string }>();
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <form
+      className="flex flex-wrap items-center gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        setMessage(undefined);
+        startTransition(async () => {
+          const result = await setDomainExpiry(siteId, value);
+          if (result.ok) {
+            setMessage({ ok: true, text: "Kaydedildi." });
+            router.refresh();
+          } else setMessage({ ok: false, text: result.message });
+        });
+      }}
+    >
+      <div className="w-44">
+        <Input type="date" value={value} onChange={(e) => setValue(e.target.value)} />
+      </div>
+      <Button type="submit" disabled={pending || value === current}>
+        {pending ? "Kaydediliyor…" : "Kaydet"}
+      </Button>
+      {message && <span className={`text-sm ${message.ok ? "text-emerald-700" : "text-red-600"}`}>{message.text}</span>}
+    </form>
   );
 }

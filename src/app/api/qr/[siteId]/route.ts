@@ -1,5 +1,6 @@
 import { findEditableSite } from "@/lib/dal";
 import { menuUrl, qrPng, qrSvg } from "@/lib/qr";
+import { getVerifiedDomain, publicSiteUrl } from "@/lib/sites";
 
 // QR menü kodunu indirme: /api/qr/<site>?format=png|svg (panel kullanıcıları)
 export async function GET(request: Request, { params }: RouteContext<"/api/qr/[siteId]">) {
@@ -7,8 +8,12 @@ export async function GET(request: Request, { params }: RouteContext<"/api/qr/[s
   const site = await findEditableSite(siteId);
   if (!site || site.sector !== "restoran") return new Response("Bulunamadı", { status: 404 });
 
+  // QR sitenin domain'ine gider; domain bağlanmadan üretilmez
+  const base = publicSiteUrl(site.subdomain, await getVerifiedDomain(site.id));
+  if (!base) return new Response("Önce domain bağlayın", { status: 409 });
+
   const format = new URL(request.url).searchParams.get("format") === "svg" ? "svg" : "png";
-  const url = menuUrl(site.subdomain);
+  const url = menuUrl(base);
   const filename = `${site.subdomain}-qr-menu.${format}`;
   const headers = { "content-disposition": `attachment; filename="${filename}"`, "cache-control": "private, no-store" };
 

@@ -6,7 +6,7 @@ import { and, desc, eq, notInArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { previewLinks, siteSections, siteVersions, sites, type SiteSnapshot } from "@/db/schema";
 import { findEditableSite, getCurrentUser } from "@/lib/dal";
-import { siteUrl } from "@/lib/config";
+import { rootUrl } from "@/lib/config";
 import { resolveSiteImages } from "@/lib/images";
 import { getDraftSections, siteCacheTag } from "@/lib/sites";
 import { emptyObject, flattenErrors, objectSchema } from "@/templates/engine/fields";
@@ -164,5 +164,5 @@ export async function createPreviewLink(siteId: string): Promise<ActionResult> {
     createdBy: user?.id,
   });
 
-  return { ok: true, url: `${siteUrl(site.subdomain)}/onizleme/${token}` };
+  return { ok: true, url: `${rootUrl}/onizleme/${token}` };
 }

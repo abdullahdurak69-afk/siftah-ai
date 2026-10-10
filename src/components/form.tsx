@@ -31,6 +31,10 @@ export function Input(props: ComponentProps<"input">) {
   return <input {...props} className={`${inputClass} ${props.className ?? ""}`} />;
 }
 
+export function Textarea(props: ComponentProps<"textarea">) {
+  return <textarea {...props} className={`${inputClass} ${props.className ?? ""}`} />;
+}
+
 export function Select(props: ComponentProps<"select">) {
   return <select {...props} className={`${inputClass} ${props.className ?? ""}`} />;
 }

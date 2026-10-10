@@ -1,6 +1,8 @@
 import { isNotNull } from "drizzle-orm";
 import { db } from "@/db";
 import { sites, subscriptionReminders } from "@/db/schema";
+import { sendDomainRenewalReminders } from "@/lib/domain-renewals";
+import { purgeOldLeads } from "@/lib/leads";
 import { purgeVisitorHashes } from "@/lib/stats";
 import { getSubscription } from "@/lib/subscription";
 import { adminDigestEmail, reminderEmail, type ReminderKind } from "@/lib/subscription-emails";
@@ -8,7 +10,8 @@ import { adminDigestEmail, reminderEmail, type ReminderKind } from "@/lib/subscr
 // Günlük görevler. Sunucuda cron ile her sabah çağrılır (deploy/cron.sh daily):
 //   - Abonelik hatırlatmaları: bitişe 30, 7, 1 gün kala, süre dolunca ve site askıya alınınca site sahibine
 //   - Bugün hatırlatma giden sitelerin özeti süper admine
-//   - Önceki günlerin ziyaretçi hash'lerinin silinmesi
+//   - Domain kaydı bitişine 30, 7, 1 gün kala ve süre dolunca süper admine (domain'leri platform yeniler)
+//   - Önceki günlerin ziyaretçi hash'lerinin ve bir yıldan eski başvuruların silinmesi
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
@@ -39,9 +42,11 @@ export async function GET(request: Request) {
   }
 
   await adminDigestEmail(sent);
+  const domainReminders = await sendDomainRenewalReminders(now);
   await purgeVisitorHashes(now);
+  await purgeOldLeads();
 
-  return Response.json({ sites: rows.length, reminders: sent.map((s) => `${s.site.name}: ${s.kind}`) });
+  return Response.json({ sites: rows.length, reminders: sent.map((s) => `${s.site.name}: ${s.kind}`), domainReminders });
 }
 
 // O an geçerli olan hatırlatma. Cron bir gün kaçırılırsa (ör. 7 gün kala) sadece en günceli gider.

@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { ChevronDown, Clock, MapPin, MessageCircle, Phone, Star } from "lucide-react";
+import { platformName, rootUrl } from "@/lib/config";
 import { telHref, whatsappHref } from "@/lib/turkish";
 import type { ImageValue } from "../engine/fields";
 import type { SectionRow } from "../engine/types";
@@ -364,4 +365,15 @@ export function RatingBadge({ business, className = "" }: { business: BaseBusine
 // Fiyat: 185 -> "185 ₺", 72.5 -> "72,50 ₺"
 export function formatPrice(value: number) {
   return `${value.toLocaleString("tr-TR", { minimumFractionDigits: Number.isInteger(value) ? 0 : 2, maximumFractionDigits: 2 })} ₺`;
+}
+
+// Site altındaki küçük platform bağlantısı. nofollow: Google bunu bağlantı manipülasyonu saymasın.
+export function PlatformCredit() {
+  return (
+    <p className="mt-3 text-xs opacity-70">
+      <a href={rootUrl} rel="nofollow" className="hover:underline">
+        {platformName} ile yapıldı
+      </a>
+    </p>
+  );
 }

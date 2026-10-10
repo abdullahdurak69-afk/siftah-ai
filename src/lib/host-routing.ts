@@ -1,7 +1,7 @@
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, gt, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { domains, sites } from "@/db/schema";
-import { protocol, siteUrl } from "@/lib/config";
+import { domains, previewLinks, sites } from "@/db/schema";
+import { protocol, subdomainSitesEnabled } from "@/lib/config";
 import { isSuspended } from "@/lib/subscription";
 
 // Proxy katmanında çalışır (sayfa çizilmeden önce): böylece bulunamayan siteler gerçek 404,
@@ -38,7 +38,8 @@ function liveRoute(row: { name: string; sector: string; subscriptionEndsAt: Date
   return { kind: "site", subdomain, sector: row.sector };
 }
 
-// kaya.platformadi.com -> yayındaysa site; custom domain'i varsa oraya 308
+// kaya.platformadi.com -> doğrulanmış domain'i varsa oraya 308, yoksa 404 (subdomain'ler yayın adresi değildir;
+// sadece DEV_SUBDOMAIN_SITES=1 iken site gösterilir)
 export function routeSubdomain(subdomain: string) {
   return cached(`s:${subdomain}`, async () => {
     const [row] = await db
@@ -57,6 +58,7 @@ export function routeSubdomain(subdomain: string) {
 
     if (!row || !isLive(row)) return { kind: "not-found" };
     if (row.domain) return { kind: "redirect", to: `${protocol}://${row.domain}` };
+    if (!subdomainSitesEnabled) return { kind: "not-found" };
     return liveRoute(row, subdomain);
   });
 }
@@ -91,4 +93,13 @@ export function routeCustomHost(host: string) {
   });
 }
 
-export { siteUrl };
+// Ana domain'deki paylaşılan önizleme linki (/onizleme/<token>) geçerli mi; değilse proxy gerçek 404 döner
+export async function previewTokenExists(token: string) {
+  if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) return false;
+  const [row] = await db
+    .select({ id: previewLinks.id })
+    .from(previewLinks)
+    .where(and(eq(previewLinks.token, token), gt(previewLinks.expiresAt, sql`now()`)))
+    .limit(1);
+  return Boolean(row);
+}

@@ -5,6 +5,7 @@ import { useSelectedLayoutSegments } from "next/navigation";
 
 const items = [
   { segment: null, href: "/admin", label: "Siteler" },
+  { segment: "basvurular", href: "/admin/basvurular", label: "Başvurular" },
   { segment: "odemeler", href: "/admin/odemeler", label: "Ödemeler" },
   { segment: "kullanicilar", href: "/admin/kullanicilar", label: "Kullanıcılar" },
   { segment: "e-postalar", href: "/admin/e-postalar", label: "E-postalar" },

@@ -2,6 +2,8 @@ import { rootDomain } from "@/lib/config";
 import { classifyHost } from "@/lib/hosts";
 import { legalPages, legalUrl, type LegalPage } from "@/lib/legal-links";
 import { resolvePublicSite } from "@/lib/public-site";
+import { guides } from "@/content/guides";
+import { sectorPages } from "@/content/sectors";
 
 const protocol = rootDomain.startsWith("localhost") ? "http" : "https";
 
@@ -19,8 +21,12 @@ export async function GET(request: Request) {
   const host = classifyHost(request.headers.get("host"));
 
   if (host.kind === "root") {
+    const base = `${protocol}://${rootDomain}`;
     return sitemap([
-      { loc: `${protocol}://${rootDomain}/` },
+      { loc: `${base}/` },
+      ...sectorPages.map((p) => ({ loc: `${base}/${p.slug}` })),
+      ...["/fiyatlar", "/ornekler", "/sss", "/rehber", "/iletisim"].map((path) => ({ loc: `${base}${path}` })),
+      ...guides.map((g) => ({ loc: `${base}/rehber/${g.slug}`, lastmod: new Date(`${g.updatedAt ?? g.publishedAt}T12:00:00+03:00`) })),
       ...(Object.keys(legalPages) as LegalPage[]).map((page) => ({ loc: legalUrl(page) })),
     ]);
   }

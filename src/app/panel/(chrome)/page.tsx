@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { listSitesForCurrentUser, requireUser } from "@/lib/dal";
-import { sectors, siteUrl } from "@/lib/config";
+import { sectors } from "@/lib/config";
+import { publicSiteUrl } from "@/lib/sites";
 import { hasTemplate } from "@/templates/registry";
 
 export default function DashboardPage() {
@@ -35,6 +36,8 @@ const statusLabels = {
   draft: { text: "Taslak", className: "bg-slate-100 text-slate-700" },
   published: { text: "Yayında", className: "bg-emerald-100 text-emerald-800" },
   suspended: { text: "Askıda", className: "bg-red-100 text-red-700" },
+  // Yayınlandı ama domain bağlanmadığı için ziyaretçiye kapalı
+  waiting: { text: "Domain bekleniyor", className: "bg-amber-100 text-amber-800" },
 } as const;
 
 async function SiteList() {
@@ -62,8 +65,8 @@ async function SiteList() {
       )}
       <ul className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">
         {sites.map((site) => {
-          const status = statusLabels[site.status];
-          const url = siteUrl(site.subdomain);
+          const url = site.publishedVersionId ? publicSiteUrl(site.subdomain, site.domain) : null;
+          const status = statusLabels[site.status === "published" && !url ? "waiting" : site.status];
           return (
             <li key={site.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
               <Link href={`/siteler/${site.id}`} className="min-w-0 hover:underline">
@@ -82,9 +85,13 @@ async function SiteList() {
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${status.className}`}>
                   {status.text}
                 </span>
-                <a href={url} target="_blank" rel="noreferrer" className="text-slate-600 underline hover:text-slate-900">
-                  {url.replace(/^https?:\/\//, "")}
-                </a>
+                {url ? (
+                  <a href={url} target="_blank" rel="noreferrer" className="text-slate-600 underline hover:text-slate-900">
+                    {url.replace(/^https?:\/\//, "")}
+                  </a>
+                ) : (
+                  site.status !== "published" && !site.domain && <span className="text-slate-400">Domain bağlanmadı</span>
+                )}
               </div>
             </li>
           );

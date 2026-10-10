@@ -1,0 +1,1 @@
+ALTER TABLE "domains" ADD COLUMN "expires_at" timestamp with time zone;

@@ -10,11 +10,11 @@ export const instant = false;
 
 export default async function QrMenuPage({ params }: PageProps<"/panel/siteler/[id]/qr-menu">) {
   const { id } = await params;
-  const { site, publishedAt } = await getEditableSite(id);
+  const { site, publishedAt, publicUrl } = await getEditableSite(id);
   if (site.sector !== "restoran") notFound();
 
-  const url = menuUrl(site.subdomain);
-  const svg = await qrSvg(url);
+  const url = publicUrl ? menuUrl(publicUrl) : null;
+  const svg = url ? await qrSvg(url) : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -26,41 +26,53 @@ export default async function QrMenuPage({ params }: PageProps<"/panel/siteler/[
         </p>
       </div>
 
-      {!publishedAt && (
+      {!url && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          QR kod sitenizin domain&apos;indeki menü sayfasına gider (ör. firmaniz.com/menu). Domain bağlandığında kod
+          burada hazır olur.{" "}
+          <Link href={`/siteler/${site.id}/domain`} className="font-medium underline">
+            Domain ayarları
+          </Link>
+        </p>
+      )}
+
+      {url && !publishedAt && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Siteniz henüz yayınlanmadı. QR kod, siteyi yayınladıktan sonra çalışır.
         </p>
       )}
 
-      <section className="grid gap-6 rounded-xl border border-slate-200 bg-white p-5 md:grid-cols-[220px_1fr] md:items-center">
-        <div className="mx-auto w-full max-w-[220px] rounded-lg border border-slate-200 p-3 [&_svg]:h-auto [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} />
-        <div className="flex flex-col gap-3">
-          <div>
-            <p className="text-sm text-slate-500">Menü adresi</p>
-            <a href={url} target="_blank" rel="noreferrer" className="break-all font-medium underline">
-              {url.replace(/^https?:\/\//, "")}
-            </a>
+      {url && svg && (
+        <section className="grid gap-6 rounded-xl border border-slate-200 bg-white p-5 md:grid-cols-[220px_1fr] md:items-center">
+          <div className="mx-auto w-full max-w-[220px] rounded-lg border border-slate-200 p-3 [&_svg]:h-auto [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} />
+          <div className="flex flex-col gap-3">
+            <div>
+              <p className="text-sm text-slate-500">Menü adresi</p>
+              <a href={url} target="_blank" rel="noreferrer" className="break-all font-medium underline">
+                {url.replace(/^https?:\/\//, "")}
+              </a>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={`/qr-kart/${site.id}`}
+                target="_blank"
+                className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-700"
+              >
+                <Printer className="size-4" /> Masa kartlarını yazdır
+              </Link>
+              <a href={`/api/qr/${site.id}?format=png`} className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium hover:bg-slate-50">
+                <Download className="size-4" /> PNG indir
+              </a>
+              <a href={`/api/qr/${site.id}?format=svg`} className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium hover:bg-slate-50">
+                <Download className="size-4" /> SVG indir (matbaa için)
+              </a>
+            </div>
+            <p className="text-sm text-slate-500">
+              Kod domain&apos;inize bağlıdır. Domain&apos;inizi değiştirirseniz kartları yeniden basmanız gerekir.
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/qr-kart/${site.id}`}
-              target="_blank"
-              className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-700"
-            >
-              <Printer className="size-4" /> Masa kartlarını yazdır
-            </Link>
-            <a href={`/api/qr/${site.id}?format=png`} className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium hover:bg-slate-50">
-              <Download className="size-4" /> PNG indir
-            </a>
-            <a href={`/api/qr/${site.id}?format=svg`} className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium hover:bg-slate-50">
-              <Download className="size-4" /> SVG indir (matbaa için)
-            </a>
-          </div>
-          <p className="text-sm text-slate-500">
-            Kendi domain&apos;inizi bağlasanız da bu kod çalışmaya devam eder; ziyaretçi otomatik olarak yeni adresinize yönlenir.
-          </p>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="rounded-xl border border-slate-200 bg-white p-5">
         <h3 className="font-semibold">Telefonda görünümü</h3>

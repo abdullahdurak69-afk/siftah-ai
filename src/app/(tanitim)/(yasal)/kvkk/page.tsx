@@ -25,6 +25,7 @@ export default function KvkkPage() {
       <h2>İşlenen kişisel veriler</h2>
       <ul>
         <li><strong>Kimlik ve iletişim:</strong> ad soyad, e-posta adresi, telefon numarası, fatura bilgileri.</li>
+        <li><strong>Başvuru:</strong> tanıtım sitesindeki başvuru formuna yazdığınız ad soyad, telefon, işletme adı, sektör ve mesajınız.</li>
         <li><strong>Müşteri işlem:</strong> abonelik dönemleri, ödeme kayıtları (tutar ve tarih; kart bilgisi tutulmaz), destek yazışmaları.</li>
         <li><strong>İşlem güvenliği:</strong> panel oturum kayıtları, IP adresi, tarayıcı bilgisi, şifrenin geri döndürülemez özeti (şifrenin kendisi saklanmaz).</li>
         <li><strong>Site içeriği:</strong> panelde web sitenize eklediğiniz metin ve fotoğraflar. Bu içerikte üçüncü kişilere ait kişisel veri yer alıyorsa, o veriler için veri sorumlusu sitenin sahibi olan müşterimizdir; biz yalnızca barındırma hizmeti veririz.</li>
@@ -32,6 +33,7 @@ export default function KvkkPage() {
 
       <h2>İşleme amaçları ve hukuki sebepler</h2>
       <ul>
+        <li>Başvuru formu üzerinden talep ettiğiniz bilgilendirme ve teklif için sizinle iletişime geçilmesi: sözleşmenin kurulmasıyla doğrudan ilgili olması (KVKK m. 5/2-c).</li>
         <li>Web sitesi hizmetinin sunulması, hesabın açılması ve yönetilmesi: sözleşmenin kurulması ve ifası (KVKK m. 5/2-c).</li>
         <li>Abonelik takibi, faturalama, yenileme hatırlatmaları: sözleşmenin ifası ve hukuki yükümlülük (m. 5/2-c, 5/2-ç).</li>
         <li>Hesap ve sistem güvenliği, hataların tespiti, kötüye kullanımın önlenmesi: meşru menfaat (m. 5/2-f).</li>
@@ -40,7 +42,7 @@ export default function KvkkPage() {
 
       <h2>Toplama yöntemi</h2>
       <p>
-        Veriler, panel üzerinden doldurduğunuz formlar, e-posta ve telefon görüşmeleri ile hizmet kullanımı sırasında
+        Veriler, tanıtım sitesindeki başvuru formu, panel üzerinden doldurduğunuz formlar, e-posta ve telefon görüşmeleri ile hizmet kullanımı sırasında
         otomatik olarak (oturum ve güvenlik kayıtları) elektronik ortamda toplanır.
       </p>
 
@@ -65,7 +67,8 @@ export default function KvkkPage() {
         Hesap ve site verileri abonelik süresince saklanır. Abonelik sona erip site askıya alındıktan sonra, yeniden
         açılabilmesi için belirli bir süre daha tutulur ve ardından silinir (süre{" "}
         <a href={legalUrl("kullanim-kosullari")} className="underline">kullanım koşullarında</a>). Fatura ve ödeme
-        kayıtları vergi mevzuatının öngördüğü süre boyunca saklanır.
+        kayıtları vergi mevzuatının öngördüğü süre boyunca saklanır. Müşteriliğe dönüşmeyen başvurular en geç bir yıl
+        içinde silinir.
       </p>
 
       <h2>Haklarınız</h2>

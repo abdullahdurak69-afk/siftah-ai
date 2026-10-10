@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { canManage, getEditableSite } from "@/lib/dal";
-import { sectors, siteUrl } from "@/lib/config";
+import { rootUrl, sectors } from "@/lib/config";
 import { getTemplate } from "@/templates/registry";
 import { presetLabel } from "@/templates/catalog";
 import { healthAdNotice } from "@/templates/klinik/sections";
@@ -12,7 +12,7 @@ export const instant = false;
 
 export default async function SiteOverviewPage({ params }: PageProps<"/panel/siteler/[id]">) {
   const { id } = await params;
-  const { site, role } = await getEditableSite(id);
+  const { site, role, publicUrl } = await getEditableSite(id);
   const template = getTemplate(site.sector);
 
   if (!template) {
@@ -44,20 +44,35 @@ export default async function SiteOverviewPage({ params }: PageProps<"/panel/sit
     );
   }
 
-  const url = siteUrl(site.subdomain);
+  const live = Boolean(site.publishedVersionId && publicUrl);
 
   return (
     <div className="flex flex-col gap-4">
+      {!publicUrl && (
+        <section className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-950">
+          <h2 className="font-semibold">Siteniz domain bağlanınca yayına açılır</h2>
+          <p className="mt-1 text-sm">
+            Siteler sadece işletmenin kendi domain&apos;inde (ör. firmaniz.com) yayınlanır. O zamana kadar içerikleri
+            düzenleyip yayınlayabilir, &quot;Önizle&quot; ile kontrol edebilirsiniz.
+          </p>
+          {canManage(role) && (
+            <Link href={`/siteler/${site.id}/domain`} className="mt-2 inline-block text-sm font-medium underline">
+              Domain bağla
+            </Link>
+          )}
+        </section>
+      )}
+
       <Card>
-        <h2 className="text-lg font-semibold">{site.publishedVersionId ? "Siteniz yayında" : "Siteniz hazır"}</h2>
+        <h2 className="text-lg font-semibold">{live ? "Siteniz yayında" : "Siteniz hazır"}</h2>
         <p className="mt-1 text-slate-600">
           İçerikler <strong>{presetLabel(site.sector, site.profession) ?? "işletmenize"}</strong> için örnek metinlerle
           dolduruldu. Soldaki bölümlerden kendi işinize göre düzenleyin, fotoğraflarınızı ekleyin. Değişiklikleriniz
           &quot;Önizle&quot; ile kontrol edip &quot;Yayınla&quot;ya bastığınızda sitede görünür.
         </p>
-        {site.publishedVersionId && (
-          <a href={url} target="_blank" rel="noreferrer" className="mt-3 inline-block font-medium underline">
-            {url.replace(/^https?:\/\//, "")}
+        {live && publicUrl && (
+          <a href={publicUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block font-medium underline">
+            {publicUrl.replace(/^https?:\/\//, "")}
           </a>
         )}
       </Card>
@@ -73,6 +88,22 @@ export default async function SiteOverviewPage({ params }: PageProps<"/panel/sit
       )}
 
       {site.publishedVersionId && <StatsCard siteId={site.id} />}
+
+      <Card>
+        <h2 className="font-semibold">Google&apos;da görünün</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Haritalarda ve &quot;yakınımdaki&quot; aramalarında çıkmak için ücretsiz Google İşletme Profili açın ve profile
+          sitenizin adresini ekleyin.{site.sector !== "klinik" && " Gerçek Google puanınızı sitenize de ekleyebilirsiniz."}
+        </p>
+        <a
+          href={`${rootUrl}/rehber/google-isletme-profili-nasil-acilir`}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-3 inline-block text-sm font-medium underline"
+        >
+          Adım adım Google İşletme Profili rehberi
+        </a>
+      </Card>
 
       {canManage(role) && <SubscriptionCard siteId={site.id} endsAt={site.subscriptionEndsAt} role={role} />}
 

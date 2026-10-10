@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { rootDomain } from "@/lib/config";
 import { requireSuperAdmin } from "@/lib/dal";
 import { NewSiteForm } from "./new-site-form";
 
@@ -19,7 +18,7 @@ export default async function NewSitePage() {
           Kullanıcılar sayfasından davet edebilirsiniz.
         </p>
       </div>
-      <NewSiteForm rootDomain={rootDomain} />
+      <NewSiteForm />
     </div>
   );
 }

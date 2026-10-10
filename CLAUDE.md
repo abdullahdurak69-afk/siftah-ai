@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# Proje: Küçük işletme site platformu (çalışma adı SitePlatform)
+# Proje: Küçük işletme site platformu (marka: Siftah AI)
 
 Kullanıcıyla Türkçe konuş. Kod yorumları ve arayüz metinleri Türkçe. Büyük adımlardan önce kullanıcıyla tartış;
 "yap" demeden faz başlatma. Her fazın sonunda commit at (kullanıcı onayladı), faz başına ayrı dal.
@@ -18,7 +18,7 @@ Kullanıcıyla Türkçe konuş. Kod yorumları ve arayüz metinleri Türkçe. B�
 | 4 Custom domain + sunucu kurulum paketi (deploy/) | bitti, sunucuda test edilmedi | faz-4-domain |
 | 5 Admin paneli, abonelik (manuel ödeme, hatırlatma e-postası), davet + roller, istatistik, Sentry, yasal metinler | bitti | faz-5-admin |
 | 6 Restoran (+QR menü), kuaför, klinik şablonları; şablon altyapısı genelleştirildi | bitti | faz-6-sablonlar |
-| 7 Firma tanıtım sitesi + SEO/GEO (llms.txt dahil) | sıradaki | – |
+| 7 Domain zorunluluğu (7a); tanıtım sitesi, SEO/GEO, llms.txt, başvuru formu (7b) | bitti | faz-7-tanitim |
 
 Dallar zincirleme (her biri bir öncekinin üstünde), main'e henüz birleştirilmedi.
 
@@ -26,7 +26,15 @@ Dallar zincirleme (her biri bir öncekinin üstünde), main'e henüz birleştiri
 
 - Stack: Next.js 16 (cacheComponents + partialPrefetching açık), Drizzle + PostgreSQL, Better Auth, Zod, Tailwind, lucide-react, sharp, tldts.
 - Barındırma: kendi VPS'i (Türkiye'de sağlayıcı tercih, KVKK) + Docker Compose + Caddy (on-demand TLS) + Cloudflare DNS (platform domain'i, wildcard sertifika).
-- Domain'i müşteri kendisi alır. Yıllık abonelik. Paneli hem müşteri hem süper admin (ajans modeli) kullanır.
+- Marka **Siftah AI**, ana domain `siftahai.com.tr` (`siftahai.com` da kullanıcıda, ana adrese yönlenecek). Kodda ad
+  ve domain env'den gelir (NEXT_PUBLIC_PLATFORM_NAME/ROOT_DOMAIN). Risk: "siftahla" markası (2026/055779, sınıf 09
+  ve 42, web sitesi tasarımı ve hosting) tescilli; vekil görüşü gelene kadar kalıcı marka yatırımı yok, devir/lisans
+  seçeneği açık.
+- Müşteri siteleri sadece müşterinin kendi domain'inde yayınlanır (7. faz kararı); platform subdomain'i yok.
+  `sites.subdomain` iç kimlik ("kısa ad"): domain bağlıysa 308, yoksa 404. Domain'siz site yayınlanabilir, domain
+  doğrulanınca açılır. Platform domain'inde sadece kök, www, app (wildcard sertifika yok).
+- Domain'i varsayılan olarak platform müşteri adına (onun firma bilgileriyle) alır; bitiş tarihini süper admin girer,
+  günlük cron 30/7/1 gün kala süper admine hatırlatır. Yıllık abonelik. Paneli hem müşteri hem süper admin (ajans modeli) kullanır.
 - İlk şablon Usta/Teknik servis (referans: sancaktepeuydu.com). 6 meslek ön ayarı. Yorum ve puan asla örnek üretilmez.
 - Kayıt kapalı, ücretsiz deneme yok: siteleri süper admin açar, müşteri davetle gelir (5. faz kararı).
 - İstatistik Umami değil, kendi çerezsiz sayacımız (`site_stats_daily`); ek servis yok.
@@ -36,17 +44,22 @@ Dallar zincirleme (her biri bir öncekinin üstünde), main'e henüz birleştiri
 - Klinik şablonu bilgilendirme odaklı (6. faz kararı): hasta yorumu, önce/sonra, fiyat, Google puanı yok.
 - Şablon tasarımlarına referans site verilmedi; sektör karakterleri: restoran Fraunces + krem, kuaför Cormorant +
   kemer, klinik sade sans + turkuaz. Örnek içeriklerde fiyat da üretilmez.
-- QR menü platform subdomain'ine gider (domain değişse de basılı kod çalışsın diye).
+- QR menü sitenin domain'indeki /menu'ye gider (7. fazda değişti); domain yoksa QR üretilmez.
+- Tanıtım sitesi dürüst: sıralama garantisi, uydurma müşteri/yorum/sayı yok; pakette olmayanlar da yazılır. Gerçek
+  müşteri siteleri gelene kadar /ornekler şablon örneklerini gösterir. Başvuru formu var (kayıt kapalı).
 
 ## Kullanıcıdan beklenenler (açık)
 
-- Platform adı ve ana domain'i (henüz yok; NEXT_PUBLIC_PLATFORM_NAME/ROOT_DOMAIN geçici)
+- Marka vekili görüşü: "siftahla" tescili karşısında Siftah AI (gerekirse devir/lisans görüşmesi)
 - VPS, platform domain'i, Cloudflare + R2 hesabı (deploy/KURULUM.md 1–3)
 - Özel GitHub deposu (kodu sunucuya çekmek için) ve sunucuya SSH anahtar erişimi
-- Yıllık fiyat
+- Yıllık fiyat (`src/content/pricing.ts` → `yearlyPrice`; boşken sitede "fiyat için ulaşın" yazar) ve domain
+  ücretinin aboneliğe dahil olup olmadığı
 - Firma bilgileri (`src/content/legal-info.ts`) ve yasal metinlerin avukat kontrolü; askı sonrası veri saklama
   süresi (taslakta 90 gün)
-- E-posta sağlayıcısı (Resend önerildi) ve destek iletişim bilgileri (SUPPORT_EMAIL/PHONE)
+- E-posta sağlayıcısı (Resend önerildi) ve destek iletişim bilgileri (SUPPORT_EMAIL/PHONE; tanıtım sitesindeki
+  telefon/WhatsApp/e-posta da bunlardan gelir)
+- Yayından sonra: Google Search Console + Bing Webmaster doğrulama kodları, Siftah AI'ın kendi Google İşletme Profili
 
 ## Dikkat edilecekler (öğrenilenler)
 
@@ -56,7 +69,8 @@ Dallar zincirleme (her biri bir öncekinin üstünde), main'e henüz birleştiri
   200 olarak akmaya başlar; sayfadaki `notFound()`/`redirect()` gerçek kod döndürmez. Dev modunda görünmez.
 - Production davranışını test etmek için: `npm run build`, `.next/static` ve `public`'i `.next/standalone`'a kopyala,
   `PORT=3100 HOSTNAME=0.0.0.0 node server.js` (env: `.env.local`). Durdurmak için `lsof -ti tcp:3100 | xargs kill`
-  (`pkill -f standalone/server.js` süreci yakalamıyor).
+  (`pkill -f standalone/server.js` süreci yakalamıyor). Tarayıcıda gezmek için `NEXT_PUBLIC_ROOT_DOMAIN=localhost:3100
+  npm run build` ile derleyip launch.json'daki "uretim-test" önizlemesini aç (app.localhost:3100, bayrak kapalı).
 - Render sırasında `new Date()`/`Date.now()` kullanma (cacheComponents ve react-hooks/purity lint hata verir);
   `requestNow()` (`src/lib/request-time.ts`, `connection()` + tarih) veya DB tarafında `sql\`now()\`` kullan.
 - `src/templates/registry.ts` istemci bileşenlerinden de import edilir: içine tasarım/ön ayar koyma, sadece bölüm
@@ -68,6 +82,13 @@ Dallar zincirleme (her biri bir öncekinin üstünde), main'e henüz birleştiri
 - Server action içinde `redirect()` host bazlı proxy yeniden yazmasından geçmez; yönlendirmeyi istemcide yap.
 - `revalidateTag(tag, "max")` iki argüman ister; server action'da anında yenileme için `updateTag`.
 - `server-only` import eden modülleri tsx ile çalıştırmak için: `npx tsx --conditions=react-server <dosya>`.
+- `export const dynamicParams` cacheComponents ile kullanılamaz (sayfa 500 verir); geçersiz parametre için 404'ü
+  proxy'de ver (ör. `/ornekler/<sektör>`).
+- `NextResponse.redirect` aynı köke giden adresi göreli Location'a çevirir; geliştirmede subdomain'den ana domain'e
+  yönlendirme bu yüzden çalışmaz.
+- Tanıtım sayfaları derlemede statik üretilir: orada okunan env'ler (SUPPORT_*, *_SITE_VERIFICATION) Docker build
+  argümanı olarak da verilmeli.
+- Tarayıcı oturum çerezleri port ayırt etmez: 3000'de açık panel oturumu 3100'deki üretim testinde de geçerlidir.
 - Route grubu taşıma gibi yapısal değişikliklerden sonra dev sunucusu eski modülü tutabilir: yeniden başlat.
 - Şifre/secret değerlerini okumak otomatik mod tarafından engelleniyor; test hesaplarını tarayıcıda rastgele
   şifreyle oluştur (`crypto.randomUUID()`).
@@ -83,5 +104,7 @@ Dallar zincirleme (her biri bir öncekinin üstünde), main'e henüz birleştiri
   (Kaya'da editör), `deneme-usta@site-platform.test` ("Kaya" ve "Yıldız Su Tesisatı" sitelerinin sahibi).
   Şifre gerekirse "Şifremi unuttum" kullan: SMTP yokken bağlantı dev sunucusu günlüğüne yazılır (`preview_logs`).
 - `.env.local` içindeki PLATFORM_SERVER_IP yerel DNS testi için geçici olarak sdf.org IP'si.
+- `.env.local`'da `DEV_SUBDOMAIN_SITES=1`: domain'siz test siteleri `<kısa-ad>.localhost:3000`'de görünür. Canlıda
+  kapalı; kapalıyken davranışı standalone build ile test et (Host başlığıyla curl).
 - Dev sunucusu Claude tarayıcı panelinden: preview "site-platform" (launch.json scratch klasöründeydi; yeni oturumda
   `.claude/launch.json` proje içinde mevcut, adı "panel").

@@ -1,5 +1,5 @@
 import "server-only";
-import { protocol } from "@/lib/config";
+import { protocol, subdomainSitesEnabled } from "@/lib/config";
 import { findSiteByHost } from "@/lib/domains";
 import { getPublicSite, siteBaseUrl, type RenderableSite } from "@/lib/sites";
 
@@ -29,5 +29,7 @@ export async function resolvePublicSite(key: string): Promise<PublicSiteResoluti
   const data = await getPublicSite(key);
   if (!data) return { kind: "not-found" };
   if (data.domain) return { kind: "redirect", to: `${siteBaseUrl(key, data.domain)}/` };
+  // Domain'i olmayan site dışarıya kapalıdır (yerel geliştirme bayrağı hariç)
+  if (!subdomainSitesEnabled) return { kind: "not-found" };
   return { kind: "site", data, url: siteBaseUrl(key) };
 }

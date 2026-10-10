@@ -8,6 +8,10 @@ x-app-build: &app-build
   args:
     NEXT_PUBLIC_ROOT_DOMAIN: ${NEXT_PUBLIC_ROOT_DOMAIN}
     NEXT_PUBLIC_PLATFORM_NAME: ${NEXT_PUBLIC_PLATFORM_NAME}
+    SUPPORT_EMAIL: ${SUPPORT_EMAIL:-}
+    SUPPORT_PHONE: ${SUPPORT_PHONE:-}
+    GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
+    BING_SITE_VERIFICATION: ${BING_SITE_VERIFICATION:-}
 
 services:
   db:
@@ -49,9 +53,7 @@ services:
         condition: service_completed_successfully
 
   caddy:
-    build:
-      context: .
-      dockerfile: Dockerfile.caddy
+    image: caddy:2
     restart: unless-stopped
     ports:
       - "80:80"
@@ -59,8 +61,8 @@ services:
       - "443:443/udp"
     environment:
       ROOT_DOMAIN: ${ROOT_DOMAIN}
+      ALT_DOMAIN: ${ALT_DOMAIN}
       ACME_EMAIL: ${ACME_EMAIL}
-      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
       CADDY_ASK_SECRET: ${CADDY_ASK_SECRET}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro

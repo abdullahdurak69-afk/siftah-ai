@@ -14,7 +14,8 @@ import { ustaJsonLd, ustaMetadata } from "./usta/seo";
 
 // Canlı site, panel önizlemesi ve paylaşılan önizleme linki aynı çiziciyi kullanır; böylece önizleme birebir aynıdır.
 
-type SiteProps = { name: string; theme: string; sections: SectionRow[] };
+// basePath: sitenin kök yolu (canlıda boş; tanıtım sitesindeki örnekte /ornekler/<sektör>)
+type SiteProps = { name: string; theme: string; sections: SectionRow[]; basePath?: string };
 
 type Renderer = {
   Site: (props: SiteProps) => React.ReactNode;
@@ -39,7 +40,17 @@ function JsonLd({ data }: { data: unknown }) {
   );
 }
 
-export function SiteRenderer({ data, url, preview = false }: { data: RenderableSite; url: string; preview?: boolean }) {
+export function SiteRenderer({
+  data,
+  url,
+  preview = false,
+  basePath,
+}: {
+  data: RenderableSite;
+  url: string;
+  preview?: boolean;
+  basePath?: string;
+}) {
   const { site, sections } = data;
   const renderer = renderers[site.sector];
 
@@ -48,7 +59,7 @@ export function SiteRenderer({ data, url, preview = false }: { data: RenderableS
     return (
       <>
         {!preview && <JsonLd data={renderer.jsonLd(site.name, url, site.profession, sections)} />}
-        <Site name={site.name} theme={site.theme} sections={sections} />
+        <Site name={site.name} theme={site.theme} sections={sections} basePath={basePath} />
       </>
     );
   }
@@ -79,11 +90,21 @@ export function hasMenuPage(data: RenderableSite) {
   return data.site.sector === "restoran" && data.sections.some((s) => s.key === "menu" && s.enabled);
 }
 
-export function MenuRenderer({ data, url, preview = false }: { data: RenderableSite; url: string; preview?: boolean }) {
+export function MenuRenderer({
+  data,
+  url,
+  preview = false,
+  basePath,
+}: {
+  data: RenderableSite;
+  url: string;
+  preview?: boolean;
+  basePath?: string;
+}) {
   return (
     <>
       {!preview && <JsonLd data={restoranMenuJsonLd(data.site.name, url, data.sections)} />}
-      <RestoranMenuPage name={data.site.name} theme={data.site.theme} sections={data.sections} />
+      <RestoranMenuPage name={data.site.name} theme={data.site.theme} sections={data.sections} basePath={basePath} />
     </>
   );
 }

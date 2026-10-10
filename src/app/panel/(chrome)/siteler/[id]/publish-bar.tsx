@@ -11,11 +11,14 @@ export function PublishBar({
   status,
   published,
   hasUnpublishedChanges,
+  live,
 }: {
   siteId: string;
   status: "draft" | "published" | "suspended";
   published: boolean;
   hasUnpublishedChanges: boolean;
+  // Doğrulanmış domain'i var mı (yoksa yayınlanan sürüm domain bağlanınca açılır)
+  live: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -29,7 +32,8 @@ export function PublishBar({
     startTransition(async () => {
       const result = kind === "publish" ? await publishSite(siteId) : await discardChanges(siteId);
       if (result.ok) {
-        setMessage({ ok: true, text: kind === "publish" ? "Siteniz yayında." : "Değişiklikler geri alındı." });
+        const published = live ? "Siteniz yayında." : "Yayınlandı. Siteniz domain bağlanınca açılacak.";
+        setMessage({ ok: true, text: kind === "publish" ? published : "Değişiklikler geri alındı." });
         router.refresh();
       } else {
         setMessage({ ok: false, text: result.message ?? "İşlem yapılamadı." });
@@ -40,8 +44,10 @@ export function PublishBar({
   const statusBadge =
     status === "suspended"
       ? { text: "Askıda", className: "bg-red-100 text-red-700" }
-      : published
+      : published && live
         ? { text: "Yayında", className: "bg-emerald-100 text-emerald-800" }
+        : published
+          ? { text: "Domain bekleniyor", className: "bg-amber-100 text-amber-800" }
         : { text: "Henüz yayınlanmadı", className: "bg-slate-100 text-slate-700" };
 
   return (

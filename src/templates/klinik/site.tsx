@@ -18,6 +18,7 @@ import {
   whatsappLinkFor,
   type BaseBusiness,
   type Hours,
+  PlatformCredit,
 } from "../shared/blocks";
 import { klinikSections } from "./sections";
 
@@ -128,6 +129,7 @@ export function KlinikSite({ name, theme, sections }: { name: string; theme: str
         <p className="mx-auto mt-4 max-w-xl px-4 text-xs text-slate-500">
           Bu sitedeki bilgiler genel bilgilendirme amaçlıdır; tanı ve tedavi için mutlaka hekiminize danışınız.
         </p>
+        <PlatformCredit />
       </footer>
 
       <MobileBar cep={business.cep} whatsappLink={whatsappLink} callLabel="Randevu" />

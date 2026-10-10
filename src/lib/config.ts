@@ -16,6 +16,14 @@ export const cnameTarget = `cname.${rootHostname}`;
 
 export const panelUrl = `${protocol}://${panelSubdomain}.${rootDomain}`;
 
+// Tanıtım sitesinin adresi
+export const rootUrl = `${protocol}://${rootDomain}`;
+
+// Müşteri siteleri sadece kendi domain'lerinde yayındadır; subdomain sitenin iç kimliğidir ve dışarıya kapalıdır
+// (domain bağlıysa oraya 308 verir). Yerelde domain bağlamadan siteleri görmek için DEV_SUBDOMAIN_SITES=1.
+export const subdomainSitesEnabled = process.env.DEV_SUBDOMAIN_SITES === "1";
+
+// Sitenin platform üzerindeki teknik adresi (müşteriye gösterilmez)
 export function siteUrl(subdomain: string) {
   return `${protocol}://${subdomain}.${rootDomain}`;
 }

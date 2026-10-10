@@ -1,12 +1,13 @@
-# SitePlatform
+# Siftah AI
 
 Küçük işletmeler için çok kiracılı (multi-tenant) web sitesi platformu. Tek Next.js uygulaması, gelen domain'e göre doğru bölümü gösterir:
 
 | Adres (yerelde) | Bölüm | Kod |
 | --- | --- | --- |
-| `localhost:3000` | Firma tanıtım sitesi | `src/app/page.tsx` |
+| `localhost:3000` | Firma tanıtım sitesi, paylaşılan önizleme linkleri | `src/app/page.tsx`, `src/app/onizleme/` |
 | `app.localhost:3000` | CMS paneli | `src/app/panel/` |
-| `<subdomain>.localhost:3000` | Müşteri sitesi | `src/app/site/[subdomain]/` |
+| Müşterinin domain'i (`firmam.com`) | Müşteri sitesi | `src/app/site/[subdomain]/` |
+| `<kısa-ad>.localhost:3000` | Sadece `DEV_SUBDOMAIN_SITES=1` iken müşteri sitesi (yerel test) | aynı |
 
 Yönlendirme `src/proxy.ts` içinde yapılır. Platform adı ve ana domain `.env.local` içindeki `NEXT_PUBLIC_PLATFORM_NAME` ve `NEXT_PUBLIC_ROOT_DOMAIN` değerlerinden okunur.
 
@@ -15,7 +16,10 @@ Yönlendirme `src/proxy.ts` içinde yapılır. Platform adı ve ana domain `.env
 - Panelde yapılan her değişiklik taslaktır (`site_sections`). Ziyaretçi sadece yayındaki sürümü görür.
 - "Yayınla" taslağın anlık görüntüsünü `site_versions` tablosuna yazar ve sitenin önbelleğini yeniler. Son 10 sürüm saklanır.
 - "Geri al" taslağı yayındaki sürüme döndürür.
-- Önizleme: panelde `/siteler/<id>/onizleme`, müşteriye giriş gerektirmeyen 7 günlük link `<subdomain>/onizleme/<token>`.
+- Önizleme: panelde `/siteler/<id>/onizleme`, müşteriye giriş gerektirmeyen 7 günlük link ana domain'de
+  `/onizleme/<token>` (site henüz domain'e bağlanmamış olabilir).
+- Siteler sadece müşterinin kendi domain'inde yayındadır. Subdomain (`sites.subdomain`) sitenin iç kimliğidir:
+  domain bağlıysa oraya 308 verir, yoksa 404. Domain'siz bir site yayınlanabilir; domain doğrulanınca açılır.
 - Hiç yayınlanmamış siteler dışarıdan 404 döner; `robots.txt` ve `sitemap.xml` sadece yayındaki sitelerde açılır.
 
 ## Fotoğraflar
@@ -27,11 +31,15 @@ Yönlendirme `src/proxy.ts` içinde yapılır. Platform adı ve ana domain `.env
 
 ## Domain'ler
 
-- Müşteri panelde domain'ini ekler (`/siteler/<id>/domain`), DNS talimatlarını görür ve "Kontrol et" ile doğrular.
+- Domain'i çoğunlukla platform müşteri adına (onun firma bilgileriyle) alır; müşteri kendi aldıysa kendisi de girebilir.
+  Domain panelde eklenir (`/siteler/<id>/domain`), DNS talimatları gösterilir ve "Kontrol et" ile doğrulanır.
+- Domain kaydının bitiş tarihini süper admin girer; günlük cron bitişe 30, 7, 1 gün kala ve süre dolunca süper admine
+  e-posta gönderir (`src/lib/domain-renewals.ts`).
   Bekleyen domain'ler sunucuda 10 dakikada bir kontrol edilir (`/api/cron/domains`).
 - Host çözümleme `src/proxy.ts` + `src/lib/host-routing.ts` içinde, sayfa çizilmeden önce yapılır; böylece
   bulunamayan siteler gerçek 404, `www` ve subdomain'den asıl domain'e geçişler gerçek 308 döner.
-- SSL: Caddy, müşteri domain'lerine sertifikayı ilk ziyarette alır; önce `/api/tls-izin` ucuna sorar.
+- SSL: Caddy, müşteri domain'lerine sertifikayı ilk ziyarette alır; önce `/api/tls-izin` ucuna sorar. Platform
+  domain'inde sadece kök, `www` ve `app.` vardır (wildcard sertifika yok).
 
 ## Şablonlar
 
@@ -50,8 +58,32 @@ Yeni sektör eklemek: bu beş dosyayı yazıp `registry.ts`, `catalog.ts` ve `re
 
 - Örnek içeriklerde fiyat, yorum ve puan asla üretilmez.
 - Restoranlarda `/menu` sayfası (QR menü) vardır; panelde **QR menü** ekranından QR kod indirilir ve masa kartı
-  yazdırılır. QR, platform adresine gider (`firma.platformadi.com/menu`); müşteri domain bağlasa da çalışır.
+  yazdırılır. QR, sitenin domain'indeki menüye gider (`firmam.com/menu`); domain bağlanmadan QR üretilmez.
 - Klinik şablonu sağlık reklamı kuralları gereği hasta yorumu, önce/sonra, fiyat ve Google puanı içermez.
+
+## Tanıtım sitesi
+
+Ana domain'deki satış sitesi `src/app/(tanitim)/` altındadır; metinler `src/content/` içinden okunur.
+
+| Sayfa | Dosya / içerik |
+| --- | --- |
+| Ana sayfa | `(tanitim)/page.tsx` |
+| Sektör sayfaları (`/usta-web-sitesi`, `/restoran-web-sitesi`, `/kuafor-web-sitesi`, `/klinik-web-sitesi`) | `src/content/sectors.ts` |
+| `/fiyatlar` | `src/content/pricing.ts` (`yearlyPrice` boşken "fiyat için ulaşın" yazar, schema.org'a fiyat girmez) |
+| `/sss` | `src/content/faq.ts` + sektör soruları |
+| `/ornekler`, `/ornekler/<sektör>` | Şablonların sihirbaz içeriğiyle açılmış örnekleri (`src/content/demos.ts`), Google'a kapalı |
+| `/rehber/...` | Yazılar kendi sayfa dosyalarında, liste `src/content/guides.ts` |
+| `/iletisim` | Başvuru formu |
+| `/llms.txt` | Yapay zekâ asistanları için markdown özet (aynı içerik kaynaklarından üretilir) |
+
+- schema.org: her sayfada Organization + WebSite; ana sayfa ve fiyatlarda SoftwareApplication, sektör sayfalarında
+  Service + FAQPage, alt sayfalarda BreadcrumbList, rehberde Article (`src/lib/marketing-schema.ts`).
+- Paylaşım görseli `(tanitim)/opengraph-image.tsx` (Türkçe harfler için `src/assets/fonts/` içindeki Geist).
+- Başvuru formu (`leads` tablosu): süper admine e-posta gider, **Yönetim → Başvurular**'da listelenir, bir yıldan eski
+  başvurular günlük cron'da silinir. Bot koruması gizli alan + saatlik sınır.
+- Google Search Console / Bing doğrulama kodları `GOOGLE_SITE_VERIFICATION`, `BING_SITE_VERIFICATION` env'den.
+  Tanıtım sayfaları derlemede statik üretildiği için bu değerler ve `SUPPORT_*` Docker derlemesine de verilir.
+- Müşteri sitelerinin altında küçük, `nofollow` bir "Siftah AI ile yapıldı" bağlantısı vardır.
 
 ## Hesaplar ve roller
 

@@ -53,7 +53,7 @@ export async function createSite(_prev: CreateSiteState, formData: FormData): Pr
   }
 
   if (reservedSubdomains.has(subdomain)) {
-    return { errors: { subdomain: "Bu adres kullanılamaz, başka bir adres seçin." }, values };
+    return { errors: { subdomain: "Bu kısa ad kullanılamaz, başka bir ad seçin." }, values };
   }
 
   let siteId: string;
@@ -64,7 +64,7 @@ export async function createSite(_prev: CreateSiteState, formData: FormData): Pr
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
-      return { errors: { subdomain: "Bu adres başka bir site tarafından kullanılıyor." }, values };
+      return { errors: { subdomain: "Bu kısa ad başka bir site tarafından kullanılıyor." }, values };
     }
     throw error;
   }

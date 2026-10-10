@@ -7,6 +7,7 @@ import { domains } from "@/db/schema";
 import { findManageableSite } from "@/lib/dal";
 import { domainsCacheTag, normalizeDomainInput, runDomainCheck } from "@/lib/domains";
 import { siteCacheTag } from "@/lib/sites";
+import { endOfDay } from "@/lib/subscription";
 
 export type DomainActionResult =
   | { ok: true; verified?: boolean; problems?: string[]; warnings?: string[] }
@@ -65,5 +66,20 @@ export async function removeDomain(siteId: string): Promise<DomainActionResult> 
 
   await db.delete(domains).where(eq(domains.siteId, site.id));
   refreshCaches(site.subdomain);
+  return { ok: true };
+}
+
+// Domain kaydının bitiş tarihi: domain'leri platform yenilediği için sadece süper admin girer ("" siler)
+export async function setDomainExpiry(siteId: string, isoDate: string): Promise<DomainActionResult> {
+  const access = await findManageableSite(siteId);
+  if (!access?.user.isSuperAdmin) return { ok: false, message: "Bitiş tarihini sadece yönetici girebilir." };
+  if (isoDate && !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return { ok: false, message: "Geçerli bir tarih girin." };
+
+  const updated = await db
+    .update(domains)
+    .set({ expiresAt: isoDate ? endOfDay(isoDate) : null })
+    .where(eq(domains.siteId, access.site.id))
+    .returning({ id: domains.id });
+  if (updated.length === 0) return { ok: false, message: "Bağlı bir domain yok." };
   return { ok: true };
 }

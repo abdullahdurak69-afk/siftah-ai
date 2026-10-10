@@ -8,14 +8,16 @@
 	}
 }
 
-# Platform: tanıtım sitesi, panel (app.) ve tüm müşteri subdomain'leri.
-# Tek wildcard sertifika; Let's Encrypt kotasına takılmadan sınırsız subdomain.
-{$ROOT_DOMAIN}, *.{$ROOT_DOMAIN} {
-	tls {
-		dns cloudflare {$CLOUDFLARE_API_TOKEN}
-	}
+# Platform: tanıtım sitesi ve panel. Müşteri siteleri platform subdomain'inde yayınlanmadığı için wildcard
+# sertifika gerekmez; sertifikalar standart HTTP doğrulamasıyla alınır.
+{$ROOT_DOMAIN}, app.{$ROOT_DOMAIN} {
 	encode zstd gzip
 	reverse_proxy app:3000
+}
+
+# www ve ikinci domain (ör. siftahai.com) ana adrese yönlenir
+www.{$ROOT_DOMAIN}, {$ALT_DOMAIN}, www.{$ALT_DOMAIN} {
+	redir https://{$ROOT_DOMAIN}{uri} permanent
 }
 
 # Müşterilerin kendi domain'leri (firmam.com, www.firmam.com, site.firmam.com...).

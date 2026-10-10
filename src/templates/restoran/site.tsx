@@ -24,6 +24,7 @@ import {
   type BaseBusiness,
   type Hours,
   type ReviewsData,
+  PlatformCredit,
 } from "../shared/blocks";
 import { restoranSections } from "./sections";
 
@@ -72,7 +73,18 @@ function orderLinks(business: Business) {
 // Restoran tasarımı: krem tonlar, serif başlıklar (Fraunces), fotoğraf ağırlıklı giriş
 const restoranVars = { "--font-heading": "var(--font-fraunces)", "--alt-bg": "#faf6f0", "--dark-bg": "#1c1917" };
 
-export function RestoranSite({ name, theme, sections }: { name: string; theme: string; sections: SectionRow[] }) {
+// basePath: sitenin kök adresi. Canlı sitede boştur; tanıtım sitesindeki örnekte "/ornekler/restoran" olur.
+export function RestoranSite({
+  name,
+  theme,
+  sections,
+  basePath = "",
+}: {
+  name: string;
+  theme: string;
+  sections: SectionRow[];
+  basePath?: string;
+}) {
   const { business, content, enabled, ordered } = getRestoranContent(sections);
   const reservation = enabled("rezervasyon");
   const whatsappLink = whatsappLinkFor(business, reservation ? reservationText : "Merhaba, web sitenizden ulaşıyorum.");
@@ -129,7 +141,7 @@ export function RestoranSite({ name, theme, sections }: { name: string; theme: s
             case "hakkimizda":
               return <AboutBlock key={section.key} data={content<About>("hakkimizda")} name={name} />;
             case "menu":
-              return <MenuBlock key={section.key} menu={content<Menu>("menu")} />;
+              return <MenuBlock key={section.key} menu={content<Menu>("menu")} menuHref={`${basePath}/menu`} />;
             case "galeri":
               return <GalleryBlock key={section.key} data={content<Gallery>("galeri")} name={name} />;
             case "rezervasyon":
@@ -153,8 +165,9 @@ export function RestoranSite({ name, theme, sections }: { name: string; theme: s
       <footer className="bg-stone-950 py-8 text-center text-sm text-stone-400">
         <p className="font-heading text-lg text-stone-200">{name}</p>
         <p className="mt-1">
-          {business.ilce} / {business.il} · <a href="/menu" className="underline hover:text-white">Menü</a>
+          {business.ilce} / {business.il} · <a href={`${basePath}/menu`} className="underline hover:text-white">Menü</a>
         </p>
+        <PlatformCredit />
       </footer>
 
       <MobileBar cep={business.cep} whatsappLink={whatsappLink} callLabel="Ara" whatsappLabel={reservation ? "Rezervasyon" : "WhatsApp"} />
@@ -287,7 +300,7 @@ function AboutBlock({ data, name }: { data: About; name: string }) {
   );
 }
 
-function MenuBlock({ menu }: { menu: Menu }) {
+function MenuBlock({ menu, menuHref }: { menu: Menu; menuHref: string }) {
   const categories = menu.kategoriler.filter((c) => c.urunler.length > 0);
   return (
     <section id="menu" className="scroll-mt-16 bg-[var(--alt-bg)] py-16 md:py-24">
@@ -305,7 +318,7 @@ function MenuBlock({ menu }: { menu: Menu }) {
         <MenuCategories menu={menu} layout="columns" />
         <div className="mt-12 flex flex-col items-center gap-3 text-center">
           {menu.not && <p className="text-sm text-stone-500">{menu.not}</p>}
-          <a href="/menu" className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-semibold hover:border-stone-500">
+          <a href={menuHref} className="rounded-full border border-stone-300 bg-white px-5 py-2 text-sm font-semibold hover:border-stone-500">
             Menüyü tam sayfa aç
           </a>
         </div>
@@ -412,7 +425,17 @@ function ExtraLinks({ business, orders }: { business: Business; orders: { label:
 
 // --- QR menü sayfası (/menu): masada telefondan açılır, sadece menü ve iletişim ---
 
-export function RestoranMenuPage({ name, theme, sections }: { name: string; theme: string; sections: SectionRow[] }) {
+export function RestoranMenuPage({
+  name,
+  theme,
+  sections,
+  basePath = "",
+}: {
+  name: string;
+  theme: string;
+  sections: SectionRow[];
+  basePath?: string;
+}) {
   const { business, menu } = getRestoranContent(sections);
   const categories = menu.kategoriler.filter((c) => c.urunler.length > 0);
   const whatsappLink = whatsappHref(business.whatsapp || business.cep, "Merhaba, menünüzle ilgili bir sorum var.");
@@ -460,7 +483,7 @@ export function RestoranMenuPage({ name, theme, sections }: { name: string; them
         <p className="mt-4 text-sm text-stone-500">
           {business.adres}, {business.ilce} / {business.il}
         </p>
-        <Link href="/" className="mt-2 inline-block text-sm font-semibold underline">
+        <Link href={basePath || "/"} className="mt-2 inline-block text-sm font-semibold underline">
           {name} web sitesi
         </Link>
       </footer>

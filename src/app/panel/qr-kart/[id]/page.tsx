@@ -12,10 +12,10 @@ export const metadata: Metadata = { title: "QR menü kartları", robots: { index
 
 export default async function QrCardsPage({ params }: PageProps<"/panel/qr-kart/[id]">) {
   const { id } = await params;
-  const { site } = await getEditableSite(id);
-  if (site.sector !== "restoran") notFound();
+  const { site, publicUrl } = await getEditableSite(id);
+  if (site.sector !== "restoran" || !publicUrl) notFound();
 
-  const url = menuUrl(site.subdomain);
+  const url = menuUrl(publicUrl);
   const svg = await qrSvg(url);
 
   return (

@@ -4,8 +4,9 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { siteMembers, siteSections, siteVersions, sites } from "@/db/schema";
+import { domains, siteMembers, siteSections, siteVersions, sites } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { getVerifiedDomain, publicSiteUrl } from "@/lib/sites";
 import { emptyObject } from "@/templates/engine/fields";
 import { getTemplate } from "@/templates/registry";
 
@@ -30,20 +31,24 @@ export async function requireUser(): Promise<CurrentUser> {
   return user;
 }
 
+// Her site doğrulanmış domain'iyle birlikte döner (yoksa domain: null)
 export async function listSitesForCurrentUser() {
   const user = await requireUser();
 
-  if (user.isSuperAdmin) {
-    return db.select().from(sites).orderBy(desc(sites.createdAt));
-  }
-
-  return db
-    .select({ site: sites })
+  const query = db
+    .select({ site: sites, domain: domains.hostname })
     .from(sites)
-    .innerJoin(siteMembers, eq(siteMembers.siteId, sites.id))
-    .where(eq(siteMembers.userId, user.id))
-    .orderBy(desc(sites.createdAt))
-    .then((rows) => rows.map((r) => r.site));
+    .leftJoin(domains, and(eq(domains.siteId, sites.id), eq(domains.status, "verified")))
+    .$dynamic();
+
+  const rows = user.isSuperAdmin
+    ? await query.orderBy(desc(sites.createdAt))
+    : await query
+        .innerJoin(siteMembers, eq(siteMembers.siteId, sites.id))
+        .where(eq(siteMembers.userId, user.id))
+        .orderBy(desc(sites.createdAt));
+
+  return rows.map((r) => ({ ...r.site, domain: r.domain }));
 }
 
 // Süper admin her sitede "admin" sayılır; diğerleri site_members tablosundaki rolleriyle
@@ -104,7 +109,7 @@ export const getEditableSite = cache(async (siteId: string) => {
 
   await ensureTemplateSections(site);
 
-  const [sections, [published]] = await Promise.all([
+  const [sections, [published], domain] = await Promise.all([
     db.select().from(siteSections).where(eq(siteSections.siteId, site.id)).orderBy(asc(siteSections.position)),
     site.publishedVersionId
       ? db
@@ -112,12 +117,15 @@ export const getEditableSite = cache(async (siteId: string) => {
           .from(siteVersions)
           .where(eq(siteVersions.id, site.publishedVersionId))
       : Promise.resolve([]),
+    getVerifiedDomain(site.id),
   ]);
 
   const publishedAt = published?.createdAt ?? null;
   const hasUnpublishedChanges = !publishedAt || site.contentUpdatedAt > publishedAt;
+  // Ziyaretçinin siteye ulaştığı adres; domain bağlanana kadar null
+  const publicUrl = publicSiteUrl(site.subdomain, domain);
 
-  return { site, role, sections, publishedAt, hasUnpublishedChanges };
+  return { site, role, sections, publishedAt, hasUnpublishedChanges, domain, publicUrl };
 });
 
 // Şablona sonradan eklenen bölümleri (ör. galeri) mevcut sitelere kapalı olarak ekler ve sırayı şablona göre düzeltir

@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Globe } from "lucide-react";
 import { canManage, getEditableSite } from "@/lib/dal";
-import { siteUrl } from "@/lib/config";
 import { getTemplate } from "@/templates/registry";
 import { PublishBar } from "./publish-bar";
 import { SectionNav } from "./section-nav";
@@ -12,9 +11,8 @@ export const instant = false;
 
 export default async function SiteEditorLayout({ children, params }: LayoutProps<"/panel/siteler/[id]">) {
   const { id } = await params;
-  const { site, role, sections, publishedAt, hasUnpublishedChanges } = await getEditableSite(id);
+  const { site, role, sections, publishedAt, hasUnpublishedChanges, publicUrl } = await getEditableSite(id);
   const template = getTemplate(site.sector);
-  const url = siteUrl(site.subdomain);
 
   const navItems =
     template && site.setupCompletedAt
@@ -35,15 +33,23 @@ export default async function SiteEditorLayout({ children, params }: LayoutProps
             <Link href={`/siteler/${site.id}`}>{site.name}</Link>
           </h1>
         </div>
-        {publishedAt && (
+        {publishedAt && publicUrl && (
           <a
-            href={url}
+            href={publicUrl}
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-1.5 text-sm font-medium text-slate-600 underline hover:text-slate-900"
           >
-            {url.replace(/^https?:\/\//, "")} <ExternalLink className="size-4" />
+            {publicUrl.replace(/^https?:\/\//, "")} <ExternalLink className="size-4" />
           </a>
+        )}
+        {!publicUrl && canManage(role) && (
+          <Link
+            href={`/siteler/${site.id}/domain`}
+            className="flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-100"
+          >
+            <Globe className="size-4" /> Domain bağlanmadı
+          </Link>
         )}
       </div>
 
@@ -55,6 +61,7 @@ export default async function SiteEditorLayout({ children, params }: LayoutProps
           status={site.status}
           published={Boolean(publishedAt)}
           hasUnpublishedChanges={hasUnpublishedChanges}
+          live={Boolean(publicUrl)}
         />
       )}
 

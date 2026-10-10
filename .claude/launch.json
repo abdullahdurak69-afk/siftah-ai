@@ -7,6 +7,16 @@
       "runtimeArgs": ["run", "dev"],
       "port": 3000,
       "url": "http://app.localhost:3000"
+    },
+    {
+      "name": "uretim-test",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "set -a; . ./.env.local; set +a; export DEV_SUBDOMAIN_SITES= BETTER_AUTH_URL=http://app.localhost:3100 PORT=3100 HOSTNAME=0.0.0.0; cd .next/standalone && exec node server.js"
+      ],
+      "port": 3100,
+      "url": "http://localhost:3100"
     }
   ]
 }

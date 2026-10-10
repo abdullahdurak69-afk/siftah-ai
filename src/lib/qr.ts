@@ -1,11 +1,9 @@
 import "server-only";
 import QRCode from "qrcode";
-import { siteUrl } from "@/lib/config";
-
-// QR menü her zaman sitenin platform adresine gider (firma.platformadi.com/menu). Müşteri sonradan kendi
-// domain'ini bağlasa da basılı QR kodlar çalışmaya devam eder: bu adres asıl domain'e yönlendirir.
-export function menuUrl(subdomain: string) {
-  return `${siteUrl(subdomain)}/menu`;
+// QR menü sitenin kendi domain'indeki menü sayfasına gider (firmam.com/menu). Domain bağlanmadan QR üretilmez;
+// domain değişirse kodun yeniden basılması gerekir.
+export function menuUrl(siteBaseUrl: string) {
+  return `${siteBaseUrl}/menu`;
 }
 
 const options = { margin: 1, errorCorrectionLevel: "M" as const, color: { dark: "#000000", light: "#ffffff" } };

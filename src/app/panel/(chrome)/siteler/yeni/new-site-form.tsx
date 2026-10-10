@@ -8,7 +8,7 @@ import { hasTemplate } from "@/templates/registry";
 import { toSubdomain } from "@/lib/slug";
 import { createSite, type CreateSiteState } from "./actions";
 
-export function NewSiteForm({ rootDomain }: { rootDomain: string }) {
+export function NewSiteForm() {
   const router = useRouter();
   const [state, formAction, pending] = useActionState<CreateSiteState, FormData>(createSite, {});
   const [name, setName] = useState(state.values?.name ?? "");
@@ -41,24 +41,20 @@ export function NewSiteForm({ rootDomain }: { rootDomain: string }) {
       </Field>
 
       <Field
-        label="Site adresi"
+        label="Kısa ad"
         error={state.errors?.subdomain}
-        hint="Kendi domain'inizi daha sonra bağlayabilirsiniz."
+        hint="Sitenin panel içindeki kimliği, ziyaretçiye gösterilmez. Site, Domain sayfasından bağlanan domain'de yayınlanır."
       >
-        <div className="flex items-center rounded-lg border border-slate-300 bg-white focus-within:border-slate-900 focus-within:ring-2 focus-within:ring-slate-900/10">
-          <input
-            name="subdomain"
-            required
-            placeholder="kaya-elektronik"
-            className="min-w-0 flex-1 rounded-l-lg bg-transparent px-3 py-2 text-base outline-none"
-            value={subdomain}
-            onChange={(e) => {
-              setSubdomainTouched(true);
-              setSubdomain(e.target.value.toLowerCase());
-            }}
-          />
-          <span className="shrink-0 pr-3 text-slate-500">.{rootDomain}</span>
-        </div>
+        <Input
+          name="subdomain"
+          required
+          placeholder="kaya-elektronik"
+          value={subdomain}
+          onChange={(e) => {
+            setSubdomainTouched(true);
+            setSubdomain(e.target.value.toLowerCase());
+          }}
+        />
       </Field>
 
       <Field label="Sektör" error={state.errors?.sector}>

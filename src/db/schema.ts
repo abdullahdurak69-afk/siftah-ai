@@ -204,6 +204,9 @@ export const domains = pgTable(
     lastCheckedAt: timestamp("last_checked_at", { withTimezone: true }),
     // Son kontrolde bulunan sorun (panelde kullanıcıya gösterilir)
     lastError: text("last_error"),
+    // Domain kaydının bitiş tarihi. Domain'ler çoğunlukla müşteri adına platform tarafından alınır; süper admin girer,
+    // günlük cron yaklaşan bitişleri süper admine hatırlatır.
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("domains_site_id_idx").on(t.siteId)],
@@ -231,8 +234,8 @@ export const payments = pgTable(
   (t) => [index("payments_site_id_idx").on(t.siteId, t.paidOn)],
 );
 
-// Gönderilen abonelik hatırlatmaları. Aynı bitiş tarihi için aynı hatırlatma ikinci kez gönderilmez;
-// ödeme alınıp bitiş tarihi değişince hatırlatmalar yeniden başlar.
+// Gönderilen abonelik ve domain yenileme hatırlatmaları (kind: d30, d7... / domain-d30, domain-d7...). Aynı bitiş
+// tarihi için aynı hatırlatma ikinci kez gönderilmez; bitiş tarihi değişince hatırlatmalar yeniden başlar.
 export const subscriptionReminders = pgTable(
   "subscription_reminders",
   {
@@ -301,3 +304,24 @@ export type SiteSnapshot = {
 };
 
 export type Site = typeof sites.$inferSelect;
+
+// Tanıtım sitesindeki başvuru formundan gelen talepler. Kayıt kapalı olduğu için yeni müşteriler buradan gelir;
+// süper admin arayıp siteyi açar. status: new (yeni), contacted (arandı), closed (kapandı)
+export const leads = pgTable(
+  "leads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    phone: text("phone").notNull(),
+    businessName: text("business_name").notNull().default(""),
+    sector: text("sector").notNull().default(""),
+    message: text("message").notNull().default(""),
+    // Formun gönderildiği sayfa (ör. /restoran-web-sitesi)
+    source: text("source").notNull().default(""),
+    status: text("status").notNull().default("new"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("leads_created_at_idx").on(t.createdAt)],
+);
+
+export type Lead = typeof leads.$inferSelect;

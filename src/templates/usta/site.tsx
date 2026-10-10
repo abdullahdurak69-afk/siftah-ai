@@ -19,6 +19,7 @@ import {
   whatsappLinkFor,
   type BaseBusiness,
   type ReviewsData,
+  PlatformCredit,
 } from "../shared/blocks";
 import { ustaSections } from "./sections";
 
@@ -112,6 +113,7 @@ export function UstaSite({ name, theme, sections }: UstaSiteData) {
 
       <footer className="bg-slate-950 py-6 text-center text-sm text-slate-400">
         © {name} · {business.ilce} / {business.il}
+        <PlatformCredit />
       </footer>
 
       <MobileBar cep={business.cep} whatsappLink={whatsappLink} />

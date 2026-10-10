@@ -3,11 +3,12 @@
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { payments, sites, user } from "@/db/schema";
+import { leads, payments, sites, user } from "@/db/schema";
 import { requireSuperAdmin } from "@/lib/dal";
 import { auth } from "@/lib/auth";
 import { endOfDay, extendedEndDate } from "@/lib/subscription";
 import { paymentReceivedEmail } from "@/lib/subscription-emails";
+import { leadStatuses, type LeadStatus } from "@/lib/leads";
 
 export type AdminActionResult = { ok: true; message?: string } | { ok: false; message: string };
 
@@ -94,4 +95,12 @@ export async function sendPasswordLink(userId: string): Promise<AdminActionResul
   if (!row) return { ok: false, message: "Kullanıcı bulunamadı." };
   await auth.api.requestPasswordReset({ body: { email: row.email } });
   return { ok: true, message: `${row.email} adresine bağlantı gönderildi.` };
+}
+
+// Tanıtım sitesinden gelen başvurunun durumu (yeni, arandı, kapandı)
+export async function setLeadStatus(leadId: string, status: LeadStatus): Promise<AdminActionResult> {
+  await requireSuperAdmin();
+  if (!(status in leadStatuses) || !z.uuid().safeParse(leadId).success) return { ok: false, message: "Geçersiz istek." };
+  await db.update(leads).set({ status }).where(eq(leads.id, leadId));
+  return { ok: true };
 }

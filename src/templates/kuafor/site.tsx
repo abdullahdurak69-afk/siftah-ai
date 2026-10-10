@@ -22,6 +22,7 @@ import {
   type BaseBusiness,
   type Hours,
   type ReviewsData,
+  PlatformCredit,
 } from "../shared/blocks";
 import { kuaforSections } from "./sections";
 
@@ -130,6 +131,7 @@ export function KuaforSite({ name, theme, sections }: { name: string; theme: str
         <p className="mt-1">
           {business.ilce} / {business.il}
         </p>
+        <PlatformCredit />
       </footer>
 
       <MobileBar cep={business.cep} whatsappLink={whatsappLink} callLabel="Ara" whatsappLabel="Randevu" />

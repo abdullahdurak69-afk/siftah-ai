@@ -6,7 +6,8 @@ import { desc, eq } from "drizzle-orm";
 import { ExternalLink } from "lucide-react";
 import { db } from "@/db";
 import { payments, sites, user } from "@/db/schema";
-import { sectors, siteUrl } from "@/lib/config";
+import { sectors } from "@/lib/config";
+import { getVerifiedDomain, publicSiteUrl } from "@/lib/sites";
 import { listSiteMembers } from "@/lib/invites";
 import { formatNumber } from "@/lib/stats";
 import { daysText, formatDate, getSubscription, stateLabels, toIsoDate } from "@/lib/subscription";
@@ -25,7 +26,7 @@ export default async function AdminSitePage({ params }: PageProps<"/panel/admin/
   const sub = getSubscription(site.subscriptionEndsAt, now.getTime());
   const label = stateLabels[sub.state];
 
-  const [history, members] = await Promise.all([
+  const [history, members, domain] = await Promise.all([
     db
       .select({
         id: payments.id,
@@ -40,7 +41,9 @@ export default async function AdminSitePage({ params }: PageProps<"/panel/admin/
       .where(eq(payments.siteId, site.id))
       .orderBy(desc(payments.paidOn), desc(payments.createdAt)),
     listSiteMembers(site.id),
+    getVerifiedDomain(site.id),
   ]);
+  const url = site.publishedVersionId ? publicSiteUrl(site.subdomain, domain) : null;
   const owners = members.filter((m) => m.role === "owner");
 
   return (
@@ -60,9 +63,15 @@ export default async function AdminSitePage({ params }: PageProps<"/panel/admin/
           <Link href={`/siteler/${site.id}/kullanicilar`} className="underline">
             Kullanıcılar
           </Link>
-          <a href={siteUrl(site.subdomain)} target="_blank" rel="noreferrer" className="flex items-center gap-1 underline">
-            {site.subdomain} <ExternalLink className="size-3.5" />
-          </a>
+          {url ? (
+            <a href={url} target="_blank" rel="noreferrer" className="flex items-center gap-1 underline">
+              {url.replace(/^https?:\/\//, "")} <ExternalLink className="size-3.5" />
+            </a>
+          ) : (
+            <Link href={`/siteler/${site.id}/domain`} className="text-amber-700 underline">
+              Domain bağlanmadı
+            </Link>
+          )}
         </div>
       </div>
 
