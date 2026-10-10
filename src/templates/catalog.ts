@@ -1,6 +1,8 @@
 import type { Sector } from "@/lib/config";
 import type { PresetOption, SetupInput, WizardCopy } from "./engine/setup";
 import type { SectionRow } from "./engine/types";
+import { buildKuaforContent } from "./kuafor/defaults";
+import { kuaforPresets } from "./kuafor/presets";
 import { buildRestoranContent } from "./restoran/defaults";
 import { restoranPresets } from "./restoran/presets";
 import { buildUstaContent } from "./usta/defaults";
@@ -51,6 +53,24 @@ const catalogs: Partial<Record<Sector, Catalog>> = {
       areas: false,
     },
     build: buildRestoranContent,
+  },
+  kuafor: {
+    presets: Object.entries(kuaforPresets).map(([key, p]) => ({
+      key,
+      label: p.label,
+      icon: p.icon,
+      choices: p.categories.map((c) => ({ ikon: c.ikon, baslik: c.ad })),
+    })),
+    wizard: {
+      presetStep: "Tür",
+      presetTitle: "{ad} nasıl bir salon?",
+      presetHint: "Seçtiğiniz türe göre hizmet listesi, tanıtım metni ve sık sorulan sorular hazır gelir.",
+      choicesStep: "Hizmetler",
+      choicesTitle: "Hangi hizmet gruplarını sunuyorsunuz?",
+      choicesHint: "Gruplar örnek hizmetlerle gelir; fiyatları ve süreleri daha sonra kendinize göre düzenlersiniz.",
+      areas: false,
+    },
+    build: buildKuaforContent,
   },
 };
 

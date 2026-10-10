@@ -1,5 +1,6 @@
 import type { Sector } from "@/lib/config";
 import type { SectionDef } from "./engine/types";
+import { kuaforSections } from "./kuafor/sections";
 import { restoranSections } from "./restoran/sections";
 import { ustaSections } from "./usta/sections";
 
@@ -8,6 +9,7 @@ import { ustaSections } from "./usta/sections";
 const templates: Partial<Record<Sector, { sections: SectionDef[] }>> = {
   usta: { sections: ustaSections },
   restoran: { sections: restoranSections },
+  kuafor: { sections: kuaforSections },
 };
 
 export function getTemplate(sector: Sector) {

@@ -3,6 +3,8 @@ import type { Sector } from "@/lib/config";
 import { sectors } from "@/lib/config";
 import type { RenderableSite } from "@/lib/sites";
 import type { SectionRow } from "./engine/types";
+import { KuaforSite } from "./kuafor/site";
+import { kuaforJsonLd, kuaforMetadata } from "./kuafor/seo";
 import { RestoranMenuPage, RestoranSite } from "./restoran/site";
 import { restoranJsonLd, restoranMenuJsonLd, restoranMenuMetadata, restoranMetadata } from "./restoran/seo";
 import { UstaSite } from "./usta/site";
@@ -21,6 +23,7 @@ type Renderer = {
 const renderers: Partial<Record<Sector, Renderer>> = {
   usta: { Site: UstaSite, metadata: (name, _p, sections) => ustaMetadata(name, sections), jsonLd: ustaJsonLd },
   restoran: { Site: RestoranSite, metadata: restoranMetadata, jsonLd: restoranJsonLd },
+  kuafor: { Site: KuaforSite, metadata: kuaforMetadata, jsonLd: kuaforJsonLd },
 };
 
 function JsonLd({ data }: { data: unknown }) {
