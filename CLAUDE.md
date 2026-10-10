@@ -28,7 +28,7 @@ GitHub (özel): https://github.com/abdullahdurak69-afk/siftah-ai — yeni faz da
 
 - Stack: Next.js 16 (cacheComponents + partialPrefetching açık), Drizzle + PostgreSQL, Better Auth, Zod, Tailwind, lucide-react, sharp, tldts.
 - Barındırma: kendi VPS'i (Türkiye'de sağlayıcı tercih, KVKK) + Docker Compose + Caddy (on-demand TLS) + Cloudflare DNS (platform domain'i, wildcard sertifika).
-- Marka **Siftah AI**, ana domain `siftahai.com.tr` (`siftahai.com` da kullanıcıda, ana adrese yönlenecek). Kodda ad
+- Marka **Siftah AI**, ana domain `siftahai.com` (`siftahai.com.tr` ana adrese yönlenir; kullanıcı .com'u seçti). Kodda ad
   ve domain env'den gelir (NEXT_PUBLIC_PLATFORM_NAME/ROOT_DOMAIN). Risk: "siftahla" markası (2026/055779, sınıf 09
   ve 42, web sitesi tasarımı ve hosting) tescilli; vekil görüşü gelene kadar kalıcı marka yatırımı yok, devir/lisans
   seçeneği açık.
@@ -94,6 +94,20 @@ GitHub (özel): https://github.com/abdullahdurak69-afk/siftah-ai — yeni faz da
 - Route grubu taşıma gibi yapısal değişikliklerden sonra dev sunucusu eski modülü tutabilir: yeniden başlat.
 - Şifre/secret değerlerini okumak otomatik mod tarafından engelleniyor; test hesaplarını tarayıcıda rastgele
   şifreyle oluştur (`crypto.randomUUID()`).
+
+## Canlı sunucu (deneme, 2026-10-10)
+
+- AWS EC2 Frankfurt (eu-central-1), t3.medium, Ubuntu 24.04, Elastic IP **63.189.47.41**, instance `i-01adea7fc33f296ba`.
+  Güvenlik grubu `launch-wizard-1`: SSH sadece kullanıcının IP'si, 80/443 herkese. Kullanıcının başka bölgelerde
+  başka siteleri var: onlara ve onların kaynaklarına dokunma.
+- Bağlantı: `ssh ubuntu@63.189.47.41` (kullanıcının ~/.ssh/id_ed25519 anahtarı). Kod `/opt/site-platform`, `.env` orada
+  (sunucuda üretilmiş gizli değerler; okuma). GitHub'a salt okunur deploy key ile bağlı. Güncelleme: `deploy/update.sh`.
+- Cron (ubuntu kullanıcısı): `cron.sh daily` 09:00, `cron.sh domains` 10 dakikada bir. Gece yedeği henüz yok (R2 bekleniyor).
+- DNS: domain'ler Natro'da kayıtlı, nameserver'lar AWS Route 53 (hosted zone siftahai.com `Z07818702F7QAWFPK7Y7F`,
+  siftahai.com.tr `Z03615533KOBCAVHT6R82`). Natro'da DNS kaydı düzenleme ücretli, bu yüzden Route 53. Otomatik mod
+  Natro'da nameserver değişikliğine izin vermiyor; kullanıcı kendisi yapıyor.
+- SMTP yok: e-postalar app konteyner günlüğüne yazılır
+  (`sudo docker compose -f deploy/docker-compose.yml --env-file .env logs app`).
 
 ## Yerel ortam
 

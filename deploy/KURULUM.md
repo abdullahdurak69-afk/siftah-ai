@@ -7,7 +7,7 @@ Sunucuda çalışacak yapı:
 
 ```
 İnternet ──► Caddy (80/443, otomatik SSL)
-                 ├── siftahai.com.tr, app.siftahai.com.tr → standart sertifika (www ve siftahai.com yönlenir)
+                 ├── siftahai.com, app.siftahai.com       → standart sertifika (www ve siftahai.com.tr yönlenir)
                  └── müşteri domain'leri                   → ilk ziyarette otomatik sertifika
              ──► Next.js uygulaması (app:3000)
              ──► PostgreSQL (sadece iç ağda)
@@ -23,7 +23,7 @@ Her 10 dk   ──► Bekleyen müşteri domain'lerinin DNS kontrolü
 | Ne | Önerilen | Not |
 | --- | --- | --- |
 | VPS | 2 vCPU, 4 GB RAM, 40 GB+ SSD, **Ubuntu 24.04** | Türkiye'de bir sağlayıcı (KVKK) ya da Hetzner. Yüzlerce site için yeterli. |
-| Platform domain'leri | `siftahai.com.tr` (ana), `siftahai.com` (yönlenir) | Alındı. Tanıtım sitesi ve panel (`app.`) burada; müşteri siteleri kendi domain'lerinde yayınlanır. |
+| Platform domain'leri | `siftahai.com` (ana), `siftahai.com.tr` (yönlenir) | Alındı. Tanıtım sitesi ve panel (`app.`) burada; müşteri siteleri kendi domain'lerinde yayınlanır. |
 | Cloudflare R2 | Ücretsiz katman (10 GB) | Gece yedekleri sunucu dışında dursun diye. |
 | E-posta gönderimi | [Resend](https://resend.com) (ücretsiz: günde 100) veya Brevo | Davet, şifre yenileme ve abonelik hatırlatmaları. Platform domain'i sağlayıcıda doğrulanmalı (SPF/DKIM DNS kayıtları). |
 | Hata izleme (isteğe bağlı) | [Sentry](https://sentry.io) ücretsiz planı veya kendi sunucunda GlitchTip | Sunucu hatalarını e-postayla bildirir. Kişisel veri gönderilmez. |
@@ -34,7 +34,7 @@ Domain'leri aldığın firmanın panelinde (veya DNS'i Cloudflare'e taşıdıysa
 şu kayıtları ekle. Wildcard (`*`) kayda ve API token'ına gerek yok: müşteri siteleri platform subdomain'inde
 yayınlanmaz.
 
-`siftahai.com.tr`:
+`siftahai.com`:
 
 | Tür | Ad | Değer |
 | --- | --- | --- |
@@ -43,7 +43,7 @@ yayınlanmaz.
 | A | `app` | sunucu IP adresi |
 | A | `cname` | sunucu IP adresi |
 
-`siftahai.com` (ana adrese yönlenir):
+`siftahai.com.tr` (ana adrese yönlenir):
 
 | Tür | Ad | Değer |
 | --- | --- | --- |
@@ -96,7 +96,7 @@ docker compose -f deploy/docker-compose.yml --env-file .env up -d --build
 docker compose -f deploy/docker-compose.yml --env-file .env run --rm migrate npm run db:seed
 ```
 
-Kontrol: `https://app.siftahai.com.tr` açılmalı ve geçerli bir sertifikası olmalı; `https://siftahai.com` ana adrese yönlenmeli.
+Kontrol: `https://app.siftahai.com` açılmalı ve geçerli bir sertifikası olmalı; `https://siftahai.com.tr` ana adrese yönlenmeli.
 
 ## 6. Yedekleme ve zamanlanmış görevler
 
@@ -119,7 +119,7 @@ Sunucunun saat dilimi Türkiye olmalı (`timedatectl set-timezone Europe/Istanbu
 
 ## 7. İzleme
 
-[UptimeRobot](https://uptimerobot.com) (ücretsiz) ile `https://app.siftahai.com.tr/api/health` adresine 5 dakikada bir
+[UptimeRobot](https://uptimerobot.com) (ücretsiz) ile `https://app.siftahai.com/api/health` adresine 5 dakikada bir
 istek atan bir izleyici kur. Site çökerse veya veritabanına ulaşılamazsa e-posta/telefon bildirimi gelir.
 
 Hata izleme için `.env` içindeki `SENTRY_DSN`'e Sentry (veya GlitchTip) projesinin DSN adresini yaz ve uygulamayı

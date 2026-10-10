@@ -15,7 +15,7 @@
 	reverse_proxy app:3000
 }
 
-# www ve ikinci domain (ör. siftahai.com) ana adrese yönlenir
+# www ve ikinci domain (ör. siftahai.com.tr) ana adrese yönlenir
 www.{$ROOT_DOMAIN}, {$ALT_DOMAIN}, www.{$ALT_DOMAIN} {
 	redir https://{$ROOT_DOMAIN}{uri} permanent
 }
