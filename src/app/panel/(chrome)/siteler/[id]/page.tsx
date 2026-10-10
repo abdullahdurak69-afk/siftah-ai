@@ -3,6 +3,7 @@ import { canManage, getEditableSite } from "@/lib/dal";
 import { sectors, siteUrl } from "@/lib/config";
 import { getTemplate } from "@/templates/registry";
 import { presetLabel } from "@/templates/catalog";
+import { healthAdNotice } from "@/templates/klinik/sections";
 import { StatsCard } from "./stats-card";
 import { SubscriptionCard } from "./subscription-card";
 import { ThemePicker } from "./theme-picker";
@@ -60,6 +61,16 @@ export default async function SiteOverviewPage({ params }: PageProps<"/panel/sit
           </a>
         )}
       </Card>
+
+      {site.sector === "klinik" && (
+        <section className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-950">
+          <h2 className="font-semibold">Sağlık hizmetlerinde reklam kuralları</h2>
+          <p className="mt-1 text-sm">
+            {healthAdNotice} Şablon bu yüzden yorum ve fiyat bölümü içermez; metinlerinizi bilgilendirici tutun. Emin
+            olmadığınız konularda bağlı olduğunuz meslek odasının kurallarına bakın.
+          </p>
+        </section>
+      )}
 
       {site.publishedVersionId && <StatsCard siteId={site.id} />}
 

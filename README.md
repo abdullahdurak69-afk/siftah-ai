@@ -33,6 +33,26 @@ Yönlendirme `src/proxy.ts` içinde yapılır. Platform adı ve ana domain `.env
   bulunamayan siteler gerçek 404, `www` ve subdomain'den asıl domain'e geçişler gerçek 308 döner.
 - SSL: Caddy, müşteri domain'lerine sertifikayı ilk ziyarette alır; önce `/api/tls-izin` ucuna sorar.
 
+## Şablonlar
+
+Dört sektör şablonu hazır: Usta / Teknik servis, Restoran / Kafe, Kuaför / Güzellik, Klinik.
+
+| Dosya | Görevi |
+| --- | --- |
+| `src/templates/<sektör>/sections.ts` | Bölüm ve alan tanımları (panel formu + Zod doğrulama bunlardan üretilir) |
+| `src/templates/<sektör>/presets.ts` | Türler (ör. kafe, berber, diş kliniği) ve örnek içerikler |
+| `src/templates/<sektör>/defaults.ts` | Kurulum sihirbazından ilk içeriği üretir |
+| `src/templates/<sektör>/site.tsx`, `seo.ts` | Tasarım, sayfa başlığı ve schema.org verisi |
+| `src/templates/registry.ts` / `catalog.ts` / `render.tsx` | Bölümler (istemci de kullanır) / kurulum kataloğu / çizici tablosu |
+| `src/templates/shared/blocks.tsx` | Ortak bloklar: SSS, galeri, yorumlar, iletişim + harita, mobil butonlar |
+
+Yeni sektör eklemek: bu beş dosyayı yazıp `registry.ts`, `catalog.ts` ve `render.tsx`'e bir satır eklemek.
+
+- Örnek içeriklerde fiyat, yorum ve puan asla üretilmez.
+- Restoranlarda `/menu` sayfası (QR menü) vardır; panelde **QR menü** ekranından QR kod indirilir ve masa kartı
+  yazdırılır. QR, platform adresine gider (`firma.platformadi.com/menu`); müşteri domain bağlasa da çalışır.
+- Klinik şablonu sağlık reklamı kuralları gereği hasta yorumu, önce/sonra, fiyat ve Google puanı içermez.
+
 ## Hesaplar ve roller
 
 - Kayıt kapalıdır. Siteleri süper admin açar, müşteriyi sitenin **Kullanıcılar** sayfasından davet eder.
