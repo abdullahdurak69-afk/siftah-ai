@@ -59,8 +59,8 @@ GitHub (özel): https://github.com/abdullahdurak69-afk/siftah-ai — yeni faz da
   ücretinin aboneliğe dahil olup olmadığı
 - Firma bilgileri (`src/content/legal-info.ts`) ve yasal metinlerin avukat kontrolü; askı sonrası veri saklama
   süresi (taslakta 90 gün)
-- E-posta sağlayıcısı (Resend önerildi) ve destek iletişim bilgileri (SUPPORT_EMAIL/PHONE; tanıtım sitesindeki
-  telefon/WhatsApp/e-posta da bunlardan gelir)
+- Destek iletişim bilgileri (SUPPORT_EMAIL/PHONE; tanıtım sitesindeki telefon/WhatsApp/e-posta da bunlardan
+  gelir). E-posta sağlayıcısı kuruldu (Resend).
 - Yayından sonra: Google Search Console + Bing Webmaster doğrulama kodları, Siftah AI'ın kendi Google İşletme Profili
 
 ## Dikkat edilecekler (öğrenilenler)
@@ -109,8 +109,10 @@ GitHub (özel): https://github.com/abdullahdurak69-afk/siftah-ai — yeni faz da
 - DNS: domain'ler Natro'da kayıtlı, nameserver'lar AWS Route 53 (hosted zone siftahai.com `Z07818702F7QAWFPK7Y7F`,
   siftahai.com.tr `Z03615533KOBCAVHT6R82`). Natro'da DNS kaydı düzenleme ücretli, bu yüzden Route 53. Otomatik mod
   Natro'da nameserver değişikliğine izin vermiyor; kullanıcı kendisi yapıyor.
-- SMTP yok: e-postalar app konteyner günlüğüne yazılır
-  (`sudo docker compose -f deploy/docker-compose.yml --env-file .env logs app`).
+- E-posta: Resend (bölge eu-west-1, alan adı siftahai.com doğrulandı; DKIM/SPF/DMARC kayıtları Route 53'te).
+  Sunucu `.env`'de `SMTP_URL` (sadece gönderme yetkili, siftahai.com ile sınırlı anahtar), gönderen
+  `bildirim@siftahai.com`. Uygulama nodemailer'ı paketlediği için konteynerde `require("nodemailer")` çalışmaz;
+  gönderim sonuçları `email_log` tablosunda.
 
 ## Yerel ortam
 
