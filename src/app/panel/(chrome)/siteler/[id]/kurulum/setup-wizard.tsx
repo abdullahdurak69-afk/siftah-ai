@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import { Field, FormError, Input } from "@/components/form";
 import { SectionIcon } from "@/templates/icons";
+import type { PresetOption, WizardCopy } from "@/templates/engine/setup";
 import { completeSetup } from "./actions";
-
-type PresetOption = { key: string; label: string; services: { ikon: string; baslik: string }[] };
 
 type Initial = {
   profession: string;
@@ -20,24 +19,25 @@ type Initial = {
   bolgeler: string[];
 };
 
-const steps = ["Meslek", "İletişim", "Hizmetler", "Bölgeler"] as const;
-
 export function SetupWizard({
   siteId,
   siteName,
   presets,
+  copy,
   initial,
 }: {
   siteId: string;
   siteName: string;
   presets: PresetOption[];
+  copy: WizardCopy;
   initial: Initial;
 }) {
+  const steps = [copy.presetStep, "İletişim", copy.choicesStep, ...(copy.areas ? ["Bölgeler"] : [])];
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [data, setData] = useState(initial);
   const [sameWhatsapp, setSameWhatsapp] = useState(!initial.whatsapp || initial.whatsapp === initial.cep);
-  const [services, setServices] = useState<number[]>([]);
+  const [choices, setChoices] = useState<number[]>([]);
   const [areaDraft, setAreaDraft] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string>();
@@ -49,7 +49,7 @@ export function SetupWizard({
   // Adım geçişlerinde sadece o adımın zorunlu alanları kontrol edilir; asıl doğrulama sunucuda
   function validateStep(): boolean {
     const e: Record<string, string> = {};
-    if (step === 0 && !preset) e.profession = "Bir meslek seçin.";
+    if (step === 0 && !preset) e.profession = "Bir tür seçin.";
     if (step === 1) {
       if (data.cep.replace(/\D/g, "").length < 10) e.cep = "Cep telefonunu girin.";
       if (!sameWhatsapp && data.whatsapp.replace(/\D/g, "").length < 10) e.whatsapp = "WhatsApp numarasını girin.";
@@ -57,14 +57,14 @@ export function SetupWizard({
       if (data.ilce.trim().length < 2) e.ilce = "İlçeyi girin.";
       if (data.il.trim().length < 2) e.il = "İli girin.";
     }
-    if (step === 2 && services.length === 0) e.services = "En az bir hizmet seçin.";
+    if (step === 2 && choices.length === 0) e.choices = "En az birini seçin.";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
 
   function next() {
     if (!validateStep()) return;
-    if (step === 0 && preset && services.length === 0) setServices(preset.services.map((_, i) => i));
+    if (step === 0 && preset && choices.length === 0) setChoices(preset.choices.map((_, i) => i));
     if (step === 1 && data.bolgeler.length === 0 && data.ilce.trim()) update({ bolgeler: [data.ilce.trim()] });
     setStep((s) => s + 1);
   }
@@ -84,7 +84,8 @@ export function SetupWizard({
       const result = await completeSetup(siteId, {
         ...data,
         whatsapp: sameWhatsapp ? "" : data.whatsapp,
-        services,
+        bolgeler: copy.areas ? data.bolgeler : [],
+        choices,
       });
       if (result.ok) {
         router.push(`/siteler/${siteId}`);
@@ -97,7 +98,7 @@ export function SetupWizard({
         const keys = Object.keys(serverErrors);
         if (keys.includes("profession")) setStep(0);
         else if (keys.some((k) => ["cep", "whatsapp", "sabit", "adres", "ilce", "il"].includes(k))) setStep(1);
-        else if (keys.includes("services")) setStep(2);
+        else if (keys.includes("choices")) setStep(2);
       }
     });
   }
@@ -118,8 +119,8 @@ export function SetupWizard({
       {step === 0 && (
         <div className="flex flex-col gap-3">
           <div>
-            <h2 className="text-lg font-semibold">{siteName} ne iş yapıyor?</h2>
-            <p className="text-slate-600">Seçtiğiniz mesleğe göre hizmetler ve sık sorulan sorular hazır gelir.</p>
+            <h2 className="text-lg font-semibold">{copy.presetTitle.replace("{ad}", siteName)}</h2>
+            <p className="text-slate-600">{copy.presetHint}</p>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {presets.map((p) => (
@@ -128,14 +129,14 @@ export function SetupWizard({
                 type="button"
                 aria-pressed={data.profession === p.key}
                 onClick={() => {
-                  if (data.profession !== p.key) setServices([]);
+                  if (data.profession !== p.key) setChoices([]);
                   update({ profession: p.key });
                 }}
                 className={`flex items-center gap-3 rounded-lg border p-3 text-left ${
                   data.profession === p.key ? "border-slate-900 ring-2 ring-slate-900/10" : "border-slate-200 hover:bg-slate-50"
                 }`}
               >
-                <SectionIcon name={p.services[0]?.ikon ?? ""} className="size-5 text-slate-600" />
+                <SectionIcon name={p.icon} className="size-5 text-slate-600" />
                 <span className="font-medium">{p.label}</span>
               </button>
             ))}
@@ -182,12 +183,12 @@ export function SetupWizard({
       {step === 2 && preset && (
         <div className="flex flex-col gap-3">
           <div>
-            <h2 className="text-lg font-semibold">Hangi hizmetleri veriyorsunuz?</h2>
-            <p className="text-slate-600">Açıklamaları daha sonra düzenleyebilir, yeni hizmet ekleyebilirsiniz.</p>
+            <h2 className="text-lg font-semibold">{copy.choicesTitle}</h2>
+            <p className="text-slate-600">{copy.choicesHint}</p>
           </div>
           <ul className="flex flex-col gap-2">
-            {preset.services.map((s, i) => {
-              const checked = services.includes(i);
+            {preset.choices.map((s, i) => {
+              const checked = choices.includes(i);
               return (
                 <li key={s.baslik}>
                   <label
@@ -198,7 +199,7 @@ export function SetupWizard({
                     <input
                       type="checkbox"
                       checked={checked}
-                      onChange={() => setServices(checked ? services.filter((x) => x !== i) : [...services, i].sort())}
+                      onChange={() => setChoices(checked ? choices.filter((x) => x !== i) : [...choices, i].sort((a, b) => a - b))}
                     />
                     <SectionIcon name={s.ikon} className="size-5 text-slate-600" />
                     <span className="font-medium">{s.baslik}</span>
@@ -207,7 +208,7 @@ export function SetupWizard({
               );
             })}
           </ul>
-          {errors.services && <p className="text-sm text-red-600">{errors.services}</p>}
+          {errors.choices && <p className="text-sm text-red-600">{errors.choices}</p>}
         </div>
       )}
 

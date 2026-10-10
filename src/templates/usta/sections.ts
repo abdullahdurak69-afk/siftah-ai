@@ -73,7 +73,7 @@ export const ustaSections: SectionDef[] = [
         max: 12,
         summaryField: "baslik",
         fields: {
-          ikon: { type: "icon", label: "İkon" },
+          ikon: { type: "icon", label: "İkon", set: "usta" },
           baslik: { type: "text", label: "Hizmet adı", required: true, max: 60 },
           aciklama: { type: "textarea", label: "Açıklama", required: true, max: 300 },
         },

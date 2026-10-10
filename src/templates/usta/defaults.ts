@@ -1,30 +1,12 @@
-import { z } from "zod";
 import { locative } from "@/lib/turkish";
+import type { SetupInput } from "../engine/setup";
 import type { SectionRow } from "../engine/types";
 import { noAuthorizedService, presets, type PresetKey } from "./presets";
 import { ustaSections } from "./sections";
 
-const phone = z.string().trim().regex(/^[0-9+()\s-]{7,20}$/, "Geçerli bir telefon numarası girin.");
-const optionalPhone = z.string().trim().refine((v) => v === "" || /^[0-9+()\s-]{7,20}$/.test(v), "Geçerli bir telefon numarası girin.");
-
-// Kurulum sihirbazının topladığı bilgiler
-export const ustaSetupSchema = z.object({
-  profession: z.enum(Object.keys(presets) as [PresetKey, ...PresetKey[]], "Bir meslek seçin."),
-  cep: phone,
-  whatsapp: optionalPhone,
-  sabit: optionalPhone,
-  adres: z.string().trim().min(5, "Açık adresi girin.").max(300),
-  ilce: z.string().trim().min(2, "İlçeyi girin.").max(40),
-  il: z.string().trim().min(2, "İli girin.").max(40),
-  services: z.array(z.number().int().min(0)).min(1, "En az bir hizmet seçin."),
-  bolgeler: z.array(z.string().trim().min(1).max(80)).max(40),
-});
-
-export type UstaSetup = z.infer<typeof ustaSetupSchema>;
-
 // Sihirbaz bilgilerinden, meslek ön ayarındaki örnek metinlerle dolu bir site üretir
-export function buildUstaContent(siteName: string, input: UstaSetup): SectionRow[] {
-  const preset = presets[input.profession];
+export function buildUstaContent(siteName: string, input: SetupInput): SectionRow[] {
+  const preset = presets[input.profession as PresetKey];
   const bolgeler = input.bolgeler.length > 0 ? input.bolgeler : [input.ilce];
 
   const content: Record<string, { enabled: boolean; content: Record<string, unknown> }> = {
@@ -61,7 +43,7 @@ export function buildUstaContent(siteName: string, input: UstaSetup): SectionRow
       content: {
         baslik: "Hizmetlerimiz",
         aciklama: `${input.ilce} ve çevresinde verdiğimiz hizmetler.`,
-        liste: preset.services.filter((_, i) => input.services.includes(i)),
+        liste: preset.services.filter((_, i) => input.choices.includes(i)),
       },
     },
     // Fotoğraf yüklenene kadar kapalı kalır

@@ -10,7 +10,10 @@ export type FieldDef =
   | (Base & { type: "url"; placeholder?: string; required?: boolean })
   | (Base & { type: "number"; placeholder?: string; min?: number; max?: number; step?: number })
   | (Base & { type: "tags"; placeholder?: string; max?: number })
-  | (Base & { type: "icon" })
+  // set: panelde gösterilecek ikon grubu (src/templates/icons.tsx iconSets); yoksa hepsi
+  | (Base & { type: "icon"; set?: "usta" | "restoran" | "kuafor" | "klinik" })
+  // Onay kutusu (ör. "Fiyatları göster")
+  | (Base & { type: "boolean" })
   | (Base & { type: "image"; aspect?: "wide" | "square" | "logo" })
   | (Base & { type: "images"; max?: number })
   | (Base & {
@@ -73,6 +76,8 @@ export function fieldSchema(field: FieldDef): z.ZodType {
         .max(field.max ?? 50, `En fazla ${field.max ?? 50} öğe eklenebilir.`);
     case "icon":
       return z.string().max(40);
+    case "boolean":
+      return z.boolean();
     case "image":
       return imageSchema.nullable();
     case "images":
@@ -94,6 +99,8 @@ export function emptyValue(field: FieldDef): unknown {
     case "number":
     case "image":
       return null;
+    case "boolean":
+      return false;
     case "tags":
     case "list":
     case "images":

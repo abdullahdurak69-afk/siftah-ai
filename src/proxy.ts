@@ -28,6 +28,8 @@ function siteResponse(request: NextRequest, route: HostRoute, rest: string) {
   if (route.kind === "not-found") return rewriteTo(request, "/404");
   if (route.kind === "suspended") return suspendedResponse(route.name);
   if (route.kind === "redirect") return NextResponse.redirect(`${route.to}${rest || "/"}${request.nextUrl.search}`, 308);
+  // QR menü sayfası sadece restoranlarda var
+  if (rest === "/menu" && route.sector !== "restoran") return rewriteTo(request, "/404");
   return rewriteTo(request, `/site/${route.subdomain}${rest}`);
 }
 

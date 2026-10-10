@@ -4,21 +4,28 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { siteSections, sites } from "@/db/schema";
 import { findEditableSite } from "@/lib/dal";
+import { getCatalog } from "@/templates/catalog";
 import { flattenErrors } from "@/templates/engine/fields";
-import { buildUstaContent, ustaSetupSchema } from "@/templates/usta/defaults";
+import { setupSchema } from "@/templates/engine/setup";
 import type { ActionResult } from "../actions";
 
 export async function completeSetup(siteId: string, input: unknown): Promise<ActionResult> {
   const site = await findEditableSite(siteId);
   if (!site) return { ok: false, message: "Bu siteyi düzenleme yetkiniz yok." };
-  if (site.sector !== "usta") return { ok: false, message: "Bu sektörün şablonu henüz hazır değil." };
+  const catalog = getCatalog(site.sector);
+  if (!catalog) return { ok: false, message: "Bu sektörün şablonu henüz hazır değil." };
 
-  const parsed = ustaSetupSchema.safeParse(input);
+  const parsed = setupSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, message: "Bazı alanlarda hata var.", errors: flattenErrors(parsed.error) };
   }
+  const preset = catalog.presets.find((p) => p.key === parsed.data.profession);
+  if (!preset) return { ok: false, message: "Bir tür seçin.", errors: { profession: "Bir tür seçin." } };
+  if (parsed.data.choices.some((i) => i >= preset.choices.length)) {
+    return { ok: false, message: "Geçersiz seçim.", errors: { choices: "Seçimlerinizi kontrol edin." } };
+  }
 
-  const rows = buildUstaContent(site.name, parsed.data);
+  const rows = catalog.build(site.name, parsed.data);
 
   // Kurulum içeriği baştan üretir; tekrar çalıştırılırsa mevcut içerik sıfırlanır
   await db.transaction(async (tx) => {

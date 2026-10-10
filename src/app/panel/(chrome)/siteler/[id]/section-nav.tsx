@@ -7,14 +7,15 @@ import { EyeOff } from "lucide-react";
 
 type Item = { key: string; title: string; optional: boolean; enabled: boolean };
 
-const managePages = ["domain", "kullanicilar"];
+const pages = ["domain", "kullanicilar", "qr-menu"];
 
 // manage: domain ve kullanıcı sayfaları sadece site sahibine ve admine gösterilir
-export function SectionNav({ siteId, items, manage }: { siteId: string; items: Item[]; manage: boolean }) {
+// qrMenu: restoranlarda QR menü ekranı
+export function SectionNav({ siteId, items, manage, qrMenu }: { siteId: string; items: Item[]; manage: boolean; qrMenu: boolean }) {
   // ["bolum", "<key>"], ["domain"] ya da [] (genel bakış)
   const segments = useSelectedLayoutSegments();
   const activeKey =
-    segments[0] === "bolum" ? segments[1] : segments.length === 0 ? "" : managePages.includes(segments[0]) ? segments[0] : null;
+    segments[0] === "bolum" ? segments[1] : segments.length === 0 ? "" : pages.includes(segments[0]) ? segments[0] : null;
   const navRef = useRef<HTMLElement>(null);
 
   // Mobilde menü yatay kayar; aktif bölüm görünür alana getirilir
@@ -31,6 +32,11 @@ export function SectionNav({ siteId, items, manage }: { siteId: string; items: I
         <NavLink href={`/siteler/${siteId}`} active={activeKey === ""}>
           Genel bakış
         </NavLink>
+        {qrMenu && (
+          <NavLink href={`/siteler/${siteId}/qr-menu`} active={activeKey === "qr-menu"}>
+            QR menü
+          </NavLink>
+        )}
         {manage && (
           <>
             <NavLink href={`/siteler/${siteId}/domain`} active={activeKey === "domain"}>

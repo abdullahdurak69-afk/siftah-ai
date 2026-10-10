@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getEditableSite } from "@/lib/dal";
-import { presets } from "@/templates/usta/presets";
+import { getCatalog } from "@/templates/catalog";
 import { SetupWizard } from "./setup-wizard";
 
 export const metadata: Metadata = { title: "Kurulum", robots: { index: false } };
@@ -9,20 +9,15 @@ export const instant = false;
 export default async function SetupPage({ params }: PageProps<"/panel/siteler/[id]/kurulum">) {
   const { id } = await params;
   const { site, sections } = await getEditableSite(id);
+  const catalog = getCatalog(site.sector);
 
-  if (site.sector !== "usta") {
+  if (!catalog) {
     return <p className="text-slate-600">Bu sektörün şablonu henüz hazır değil.</p>;
   }
 
   // Kurulum yeniden çalıştırılıyorsa mevcut iletişim bilgileri forma önceden doldurulur
   const business = (sections.find((s) => s.key === "isletme")?.content ?? {}) as Record<string, string>;
   const areas = (sections.find((s) => s.key === "bolgeler")?.content?.bolgeler as string[] | undefined) ?? [];
-
-  const presetOptions = Object.entries(presets).map(([key, p]) => ({
-    key,
-    label: p.label,
-    services: p.services.map((s) => ({ ikon: s.ikon, baslik: s.baslik })),
-  }));
 
   return (
     <div className="mx-auto w-full max-w-2xl">
@@ -34,7 +29,8 @@ export default async function SetupPage({ params }: PageProps<"/panel/siteler/[i
       <SetupWizard
         siteId={site.id}
         siteName={site.name}
-        presets={presetOptions}
+        presets={catalog.presets}
+        copy={catalog.wizard}
         initial={{
           profession: site.profession ?? "",
           cep: business.cep ?? "",

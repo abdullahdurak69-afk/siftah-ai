@@ -6,6 +6,8 @@ import { sites } from "@/db/schema";
 import { requireSuperAdmin } from "@/lib/dal";
 import { reservedSubdomains, sectors, type Sector } from "@/lib/config";
 import { subdomainPattern } from "@/lib/slug";
+import { hasTemplate } from "@/templates/registry";
+import { defaultThemes } from "@/templates/themes";
 
 const createSiteSchema = z.object({
   name: z.string().trim().min(2, "İşletme adı en az 2 karakter olmalı.").max(80, "İşletme adı çok uzun."),
@@ -46,6 +48,10 @@ export async function createSite(_prev: CreateSiteState, formData: FormData): Pr
 
   const { name, subdomain, sector } = parsed.data;
 
+  if (!hasTemplate(sector)) {
+    return { errors: { sector: "Bu sektörün şablonu henüz hazır değil." }, values };
+  }
+
   if (reservedSubdomains.has(subdomain)) {
     return { errors: { subdomain: "Bu adres kullanılamaz, başka bir adres seçin." }, values };
   }
@@ -53,7 +59,7 @@ export async function createSite(_prev: CreateSiteState, formData: FormData): Pr
   let siteId: string;
   try {
     siteId = await db.transaction(async (tx) => {
-      const [site] = await tx.insert(sites).values({ name, subdomain, sector }).returning({ id: sites.id });
+      const [site] = await tx.insert(sites).values({ name, subdomain, sector, theme: defaultThemes[sector] }).returning({ id: sites.id });
       return site.id;
     });
   } catch (error) {

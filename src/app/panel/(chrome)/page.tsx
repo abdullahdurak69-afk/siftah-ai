@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { listSitesForCurrentUser, requireUser } from "@/lib/dal";
 import { sectors, siteUrl } from "@/lib/config";
+import { hasTemplate } from "@/templates/registry";
 
 export default function DashboardPage() {
   return (
@@ -70,7 +71,7 @@ async function SiteList() {
                 <p className="text-sm text-slate-500">{sectors[site.sector]}</p>
               </Link>
               <div className="flex items-center gap-3 text-sm">
-                {site.sector === "usta" && !site.setupCompletedAt && (
+                {hasTemplate(site.sector) && !site.setupCompletedAt && (
                   <Link
                     href={`/siteler/${site.id}/kurulum`}
                     className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 hover:bg-amber-200"

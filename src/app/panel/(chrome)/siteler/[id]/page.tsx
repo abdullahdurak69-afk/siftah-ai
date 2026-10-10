@@ -2,7 +2,7 @@ import Link from "next/link";
 import { canManage, getEditableSite } from "@/lib/dal";
 import { sectors, siteUrl } from "@/lib/config";
 import { getTemplate } from "@/templates/registry";
-import { getPreset } from "@/templates/usta/presets";
+import { presetLabel } from "@/templates/catalog";
 import { StatsCard } from "./stats-card";
 import { SubscriptionCard } from "./subscription-card";
 import { ThemePicker } from "./theme-picker";
@@ -19,7 +19,7 @@ export default async function SiteOverviewPage({ params }: PageProps<"/panel/sit
       <Card>
         <h2 className="text-lg font-semibold">{sectors[site.sector]} şablonu yakında</h2>
         <p className="mt-1 text-slate-600">
-          Bu sektörün şablonu henüz hazır değil. Şu an sadece Usta / Teknik servis şablonu kullanılabilir.
+          Bu sektörün şablonu henüz hazır değil.
         </p>
       </Card>
     );
@@ -30,8 +30,8 @@ export default async function SiteOverviewPage({ params }: PageProps<"/panel/sit
       <Card>
         <h2 className="text-lg font-semibold">Sitenizi birkaç adımda kuralım</h2>
         <p className="mt-1 text-slate-600">
-          Mesleğinizi ve iletişim bilgilerinizi girin; hizmetler, sık sorulan sorular ve diğer bölümler örnek
-          metinlerle hazır gelsin. Sonra dilediğiniz gibi düzenlersiniz.
+          İşletmenizin türünü ve iletişim bilgilerinizi girin; bölümler örnek metinlerle hazır gelsin. Sonra
+          dilediğiniz gibi düzenlersiniz.
         </p>
         <Link
           href={`/siteler/${site.id}/kurulum`}
@@ -50,7 +50,7 @@ export default async function SiteOverviewPage({ params }: PageProps<"/panel/sit
       <Card>
         <h2 className="text-lg font-semibold">{site.publishedVersionId ? "Siteniz yayında" : "Siteniz hazır"}</h2>
         <p className="mt-1 text-slate-600">
-          İçerikler <strong>{getPreset(site.profession)?.label ?? "mesleğinize"}</strong> için örnek metinlerle
+          İçerikler <strong>{presetLabel(site.sector, site.profession) ?? "işletmenize"}</strong> için örnek metinlerle
           dolduruldu. Soldaki bölümlerden kendi işinize göre düzenleyin, fotoğraflarınızı ekleyin. Değişiklikleriniz
           &quot;Önizle&quot; ile kontrol edip &quot;Yayınla&quot;ya bastığınızda sitede görünür.
         </p>
@@ -76,7 +76,7 @@ export default async function SiteOverviewPage({ params }: PageProps<"/panel/sit
       <Card>
         <h2 className="font-semibold">Kurulumu yeniden yap</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Mesleği veya temel bilgileri baştan seçmek isterseniz kurulumu tekrar çalıştırabilirsiniz. Mevcut içerikler
+          İşletme türünü veya temel bilgileri baştan seçmek isterseniz kurulumu tekrar çalıştırabilirsiniz. Mevcut içerikler
           örnek metinlerle değiştirilir.
         </p>
         <Link href={`/siteler/${site.id}/kurulum`} className="mt-3 inline-block text-sm font-medium underline">

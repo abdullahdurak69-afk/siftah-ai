@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Plus, Trash2, X } from "lucide-react";
 import { emptyObject, type FieldDef, type Fields, type ImageValue } from "@/templates/engine/fields";
-import { icons, SectionIcon } from "@/templates/icons";
+import { icons, iconSets, SectionIcon, type IconKey } from "@/templates/icons";
 import { GalleryInput, ImageInput } from "./image-input";
 
 type Errors = Record<string, string>;
@@ -68,6 +68,23 @@ function FieldInput({
     );
   }
 
+  if (field.type === "boolean") {
+    return (
+      <label className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          className="mt-1 size-4"
+          checked={Boolean(value)}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+        <span className="flex flex-col">
+          <span className="text-sm font-medium text-slate-700">{field.label}</span>
+          {field.hint && <span className="text-sm text-slate-500">{field.hint}</span>}
+        </span>
+      </label>
+    );
+  }
+
   let control: React.ReactNode;
   switch (field.type) {
     case "textarea":
@@ -103,7 +120,7 @@ function FieldInput({
       control = <TagInput value={(value as string[]) ?? []} onChange={onChange} placeholder={field.placeholder} />;
       break;
     case "icon":
-      control = <IconPicker value={(value as string) ?? ""} onChange={onChange} />;
+      control = <IconPicker value={(value as string) ?? ""} onChange={onChange} set={field.set} />;
       break;
     case "image":
       control = <ImageInput value={(value as ImageValue | null) ?? null} onChange={onChange} aspect={field.aspect} />;
@@ -327,10 +344,19 @@ function TagInput({
   );
 }
 
-function IconPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function IconPicker({
+  value,
+  onChange,
+  set,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  set?: keyof typeof iconSets;
+}) {
+  const keys = set ? iconSets[set] : (Object.keys(icons) as IconKey[]);
   return (
     <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-9">
-      {Object.entries(icons).map(([key, { label, Icon }]) => (
+      {keys.map((key) => [key, icons[key]] as const).map(([key, { label, Icon }]) => (
         <button
           key={key}
           type="button"

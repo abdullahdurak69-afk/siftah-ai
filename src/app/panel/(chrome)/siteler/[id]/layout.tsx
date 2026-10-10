@@ -60,7 +60,7 @@ export default async function SiteEditorLayout({ children, params }: LayoutProps
 
       {navItems.length > 0 ? (
         <div className="flex flex-col gap-6 md:flex-row md:items-start">
-          <SectionNav siteId={site.id} items={navItems} manage={canManage(role)} />
+          <SectionNav siteId={site.id} items={navItems} manage={canManage(role)} qrMenu={site.sector === "restoran"} />
           <div className="min-w-0 flex-1">{children}</div>
         </div>
       ) : (

@@ -1,5 +1,45 @@
 import {
+  Activity,
+  Apple,
+  Award,
+  Baby,
   BadgeCheck,
+  Bone,
+  Brain,
+  Brush,
+  CakeSlice,
+  CalendarCheck,
+  Car,
+  ChefHat,
+  Coffee,
+  CookingPot,
+  Croissant,
+  Crown,
+  Dog,
+  Dumbbell,
+  Eye,
+  Fish,
+  Flower2,
+  Gem,
+  Hand,
+  HeartPulse,
+  IceCreamCone,
+  Leaf,
+  Microscope,
+  Palette,
+  PawPrint,
+  Pill,
+  Pizza,
+  Salad,
+  Sandwich,
+  Scissors,
+  Smile,
+  Soup,
+  SprayCan,
+  Stethoscope,
+  Syringe,
+  Utensils,
+  Wine,
   Bath,
   Building,
   Cable,
@@ -36,6 +76,7 @@ import {
 } from "lucide-react";
 
 // Hizmet kartlarında seçilebilen ikonlar. Anahtarlar veritabanında saklanır, değiştirilmemeli.
+// Usta ikonları ilk gruptur; diğer sektörlerin ikonları iconSets ile panelde ayrıca listelenir.
 export const icons = {
   tv: { label: "Televizyon", Icon: Tv },
   ampul: { label: "Ampul", Icon: Lightbulb },
@@ -70,9 +111,71 @@ export const icons = {
   kamera: { label: "Kamera", Icon: Camera },
   wifi: { label: "Wi-Fi", Icon: Wifi },
   onay: { label: "Onay rozeti", Icon: BadgeCheck },
+  // Restoran
+  catal: { label: "Çatal bıçak", Icon: Utensils },
+  sef: { label: "Şef şapkası", Icon: ChefHat },
+  tencere: { label: "Tencere", Icon: CookingPot },
+  corba: { label: "Çorba", Icon: Soup },
+  salata: { label: "Salata", Icon: Salad },
+  pizza: { label: "Pizza", Icon: Pizza },
+  sandvic: { label: "Sandviç", Icon: Sandwich },
+  balik: { label: "Balık", Icon: Fish },
+  kahve: { label: "Kahve", Icon: Coffee },
+  pasta: { label: "Pasta", Icon: CakeSlice },
+  kruvasan: { label: "Kruvasan", Icon: Croissant },
+  dondurma: { label: "Dondurma", Icon: IceCreamCone },
+  icecek: { label: "Kadeh", Icon: Wine },
+  araba: { label: "Otopark", Icon: Car },
+  takvim: { label: "Rezervasyon / randevu", Icon: CalendarCheck },
+  // Kuaför / güzellik
+  makas: { label: "Makas", Icon: Scissors },
+  firca: { label: "Fırça", Icon: Brush },
+  palet: { label: "Renk paleti", Icon: Palette },
+  sprey: { label: "Sprey", Icon: SprayCan },
+  el: { label: "El / manikür", Icon: Hand },
+  cicek: { label: "Çiçek", Icon: Flower2 },
+  mucevher: { label: "Mücevher", Icon: Gem },
+  tac: { label: "Taç / gelin", Icon: Crown },
+  yaprak: { label: "Yaprak / doğal", Icon: Leaf },
+  goz: { label: "Göz", Icon: Eye },
+  // Klinik
+  steteskop: { label: "Steteskop", Icon: Stethoscope },
+  gulumseme: { label: "Gülümseme / diş", Icon: Smile },
+  enjektor: { label: "Enjektör", Icon: Syringe },
+  ilac: { label: "İlaç", Icon: Pill },
+  mikroskop: { label: "Mikroskop", Icon: Microscope },
+  nabiz: { label: "Kalp atışı", Icon: HeartPulse },
+  aktivite: { label: "Aktivite", Icon: Activity },
+  beyin: { label: "Beyin", Icon: Brain },
+  kemik: { label: "Kemik", Icon: Bone },
+  bebek: { label: "Bebek", Icon: Baby },
+  pati: { label: "Pati", Icon: PawPrint },
+  kopek: { label: "Köpek", Icon: Dog },
+  elma: { label: "Elma / beslenme", Icon: Apple },
+  dambil: { label: "Egzersiz", Icon: Dumbbell },
+  odul: { label: "Ödül / sertifika", Icon: Award },
 } satisfies Record<string, { label: string; Icon: LucideIcon }>;
 
 export type IconKey = keyof typeof icons;
+
+// Panelde ikon seçicide gösterilecek grup. Ortak ikonlar her sektörde görünür.
+const common: IconKey[] = ["saat", "kalkan", "onay", "parilti", "ev", "bina", "kamera", "wifi", "takvim", "odul", "araba"];
+export const iconSets: Record<"usta" | "restoran" | "kuafor" | "klinik", IconKey[]> = {
+  usta: [
+    "tv", "ampul", "anahtar", "uydu", "kablo", "kart", "su", "elektrik", "priz", "cekic", "koltuk", "kar", "camasir",
+    "buzdolabi", "mikrodalga", "alev", "termometre", "pervane", "rulo", "matkap", "cetvel", "kilit", "kamyon", "banyo", "dus",
+    ...common,
+  ],
+  restoran: [
+    "catal", "sef", "tencere", "corba", "salata", "pizza", "sandvic", "balik", "kahve", "pasta", "kruvasan", "dondurma",
+    "icecek", "alev", "yaprak", "kamyon", ...common,
+  ],
+  kuafor: ["makas", "firca", "palet", "sprey", "el", "cicek", "mucevher", "tac", "yaprak", "goz", "su", "dus", ...common],
+  klinik: [
+    "steteskop", "gulumseme", "enjektor", "ilac", "mikroskop", "nabiz", "aktivite", "beyin", "kemik", "bebek", "pati",
+    "kopek", "elma", "dambil", "goz", "el", ...common,
+  ],
+};
 
 export function SectionIcon({ name, className }: { name: string; className?: string }) {
   const Icon = icons[name as IconKey]?.Icon ?? Wrench;

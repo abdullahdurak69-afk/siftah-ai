@@ -9,7 +9,7 @@ import { isSuspended } from "@/lib/subscription";
 // durum kodu değiştirilemediği için bu kararlar sayfada verilemez.
 
 export type HostRoute =
-  | { kind: "site"; subdomain: string }
+  | { kind: "site"; subdomain: string; sector: string }
   | { kind: "redirect"; to: string }
   | { kind: "not-found" }
   // Aboneliği bitip toleransı da geçen site: veri durur, ziyaretçiye "geçici olarak yayında değil" gösterilir
@@ -33,9 +33,9 @@ function isLive(row: { status: string; publishedVersionId: string | null }) {
   return row.status === "published" && row.publishedVersionId !== null;
 }
 
-function liveRoute(row: { name: string; subscriptionEndsAt: Date | null }, subdomain: string): HostRoute {
+function liveRoute(row: { name: string; sector: string; subscriptionEndsAt: Date | null }, subdomain: string): HostRoute {
   if (isSuspended(row.subscriptionEndsAt, Date.now())) return { kind: "suspended", name: row.name };
-  return { kind: "site", subdomain };
+  return { kind: "site", subdomain, sector: row.sector };
 }
 
 // kaya.platformadi.com -> yayındaysa site; custom domain'i varsa oraya 308
@@ -44,6 +44,7 @@ export function routeSubdomain(subdomain: string) {
     const [row] = await db
       .select({
         name: sites.name,
+        sector: sites.sector,
         status: sites.status,
         publishedVersionId: sites.publishedVersionId,
         subscriptionEndsAt: sites.subscriptionEndsAt,
@@ -69,6 +70,7 @@ export function routeCustomHost(host: string) {
         hostname: domains.hostname,
         subdomain: sites.subdomain,
         name: sites.name,
+        sector: sites.sector,
         status: sites.status,
         publishedVersionId: sites.publishedVersionId,
         subscriptionEndsAt: sites.subscriptionEndsAt,
