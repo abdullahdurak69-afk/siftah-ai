@@ -1,15 +1,17 @@
 import Link from "next/link";
-import { getEditableSite } from "@/lib/dal";
+import { canManage, getEditableSite } from "@/lib/dal";
 import { sectors, siteUrl } from "@/lib/config";
 import { getTemplate } from "@/templates/registry";
 import { getPreset } from "@/templates/usta/presets";
+import { StatsCard } from "./stats-card";
+import { SubscriptionCard } from "./subscription-card";
 import { ThemePicker } from "./theme-picker";
 
 export const instant = false;
 
 export default async function SiteOverviewPage({ params }: PageProps<"/panel/siteler/[id]">) {
   const { id } = await params;
-  const { site } = await getEditableSite(id);
+  const { site, role } = await getEditableSite(id);
   const template = getTemplate(site.sector);
 
   if (!template) {
@@ -58,6 +60,10 @@ export default async function SiteOverviewPage({ params }: PageProps<"/panel/sit
           </a>
         )}
       </Card>
+
+      {site.publishedVersionId && <StatsCard siteId={site.id} />}
+
+      {canManage(role) && <SubscriptionCard siteId={site.id} endsAt={site.subscriptionEndsAt} role={role} />}
 
       <Card>
         <h2 className="font-semibold">Site rengi</h2>

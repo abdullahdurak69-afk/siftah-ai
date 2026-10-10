@@ -13,9 +13,8 @@ export default function LoginPage() {
       </div>
       <LoginForm />
       <p className="text-sm text-slate-600">
-        Hesabınız yok mu?{" "}
-        <Link href="/kayit" className="font-medium text-slate-900 underline">
-          Kayıt olun
+        <Link href="/sifremi-unuttum" className="font-medium text-slate-900 underline">
+          Şifremi unuttum
         </Link>
       </p>
     </div>

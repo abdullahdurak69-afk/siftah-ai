@@ -8,17 +8,25 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">Siteler</h1>
-        <Link
-          href="/siteler/yeni"
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
-        >
-          Yeni site
-        </Link>
+        <Suspense fallback={null}>
+          <NewSiteButton />
+        </Suspense>
       </div>
       <Suspense fallback={<p className="text-slate-500">Yükleniyor…</p>}>
         <SiteList />
       </Suspense>
     </div>
+  );
+}
+
+// Siteleri sadece süper admin açar
+async function NewSiteButton() {
+  const user = await requireUser();
+  if (!user.isSuperAdmin) return null;
+  return (
+    <Link href="/siteler/yeni" className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
+      Yeni site
+    </Link>
   );
 }
 
@@ -35,10 +43,13 @@ async function SiteList() {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
         <p className="font-medium">Henüz bir siteniz yok.</p>
-        <p className="mt-1 text-slate-600">İlk sitenizi oluşturmak birkaç dakika sürer.</p>
-        <Link href="/siteler/yeni" className="mt-4 inline-block font-medium underline">
-          Site oluştur
-        </Link>
+        {user.isSuperAdmin ? (
+          <Link href="/siteler/yeni" className="mt-4 inline-block font-medium underline">
+            Site oluştur
+          </Link>
+        ) : (
+          <p className="mt-1 text-slate-600">Size bir site atandığında burada görünecek.</p>
+        )}
       </div>
     );
   }

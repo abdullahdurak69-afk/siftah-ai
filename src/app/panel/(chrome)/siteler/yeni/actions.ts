@@ -2,8 +2,8 @@
 
 import { z } from "zod";
 import { db } from "@/db";
-import { siteMembers, sites } from "@/db/schema";
-import { requireUser } from "@/lib/dal";
+import { sites } from "@/db/schema";
+import { requireSuperAdmin } from "@/lib/dal";
 import { reservedSubdomains, sectors, type Sector } from "@/lib/config";
 import { subdomainPattern } from "@/lib/slug";
 
@@ -24,8 +24,9 @@ export type CreateSiteState = {
 };
 
 export async function createSite(_prev: CreateSiteState, formData: FormData): Promise<CreateSiteState> {
-  // Server action'lar ayrı bir uç nokta gibidir: kullanıcı burada tekrar doğrulanır
-  const user = await requireUser();
+  // Server action'lar ayrı bir uç nokta gibidir: kullanıcı burada tekrar doğrulanır.
+  // Kayıt kapalı olduğu için siteleri sadece süper admin açar; müşteri sonradan davet edilir.
+  await requireSuperAdmin();
 
   const values = {
     name: String(formData.get("name") ?? ""),
@@ -53,10 +54,6 @@ export async function createSite(_prev: CreateSiteState, formData: FormData): Pr
   try {
     siteId = await db.transaction(async (tx) => {
       const [site] = await tx.insert(sites).values({ name, subdomain, sector }).returning({ id: sites.id });
-      // Süper admin müşteri adına açıyorsa üye olmaz; müşteri sonradan davet edilir (5. faz)
-      if (!user.isSuperAdmin) {
-        await tx.insert(siteMembers).values({ siteId: site.id, userId: user.id, role: "owner" });
-      }
       return site.id;
     });
   } catch (error) {

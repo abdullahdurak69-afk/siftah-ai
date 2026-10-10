@@ -51,3 +51,9 @@ export const sectors = {
 } as const;
 
 export type Sector = keyof typeof sectors;
+
+// Müşterinin abonelik yenileme ve destek için ulaşacağı iletişim bilgileri (panelde ve e-postalarda gösterilir)
+export const supportContact = {
+  email: process.env.SUPPORT_EMAIL ?? "",
+  phone: process.env.SUPPORT_PHONE ?? "",
+};

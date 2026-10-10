@@ -4,7 +4,7 @@ import { classifyHost } from "@/lib/hosts";
 import { routeCustomHost, routeSubdomain, type HostRoute } from "@/lib/host-routing";
 
 // Panelde girişsiz açılabilen sayfalar
-const publicPanelPaths = ["/giris", "/kayit"];
+const publicPanelPaths = ["/giris", "/sifremi-unuttum", "/sifre-belirle"];
 
 // Yeniden yazma her zaman mevcut isteğin URL'i üzerinden yapılır; aksi halde production'da Next.js
 // hedefi dış bir adres sanıp kendine HTTP ile bağlanmaya çalışır.
@@ -14,8 +14,19 @@ function rewriteTo(request: NextRequest, pathname: string) {
   return NextResponse.rewrite(url);
 }
 
+// Askıdaki site: sayfa yerine doğrudan 503 döner (arama motorları geçici durum olarak anlar)
+function suspendedResponse(name: string) {
+  const safeName = name.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+  const html = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${safeName}</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,sans-serif;background:#f8fafc;color:#0f172a;padding:24px;text-align:center}h1{font-size:1.5rem;margin:0 0 8px}p{color:#475569;margin:0}</style></head><body><main><h1>${safeName}</h1><p>Bu web sitesi geçici olarak yayında değil.</p></main></body></html>`;
+  return new NextResponse(html, {
+    status: 503,
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "retry-after": "86400" },
+  });
+}
+
 function siteResponse(request: NextRequest, route: HostRoute, rest: string) {
   if (route.kind === "not-found") return rewriteTo(request, "/404");
+  if (route.kind === "suspended") return suspendedResponse(route.name);
   if (route.kind === "redirect") return NextResponse.redirect(`${route.to}${rest || "/"}${request.nextUrl.search}`, 308);
   return rewriteTo(request, `/site/${route.subdomain}${rest}`);
 }

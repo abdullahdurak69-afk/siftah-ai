@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { domains } from "@/db/schema";
-import { getEditableSite } from "@/lib/dal";
+import { notFound } from "next/navigation";
+import { canManage, getEditableSite } from "@/lib/dal";
 import { protocol, siteUrl } from "@/lib/config";
 import { dnsInstructions, isApexDomain } from "@/lib/domains";
 import { AddDomainForm, DomainActions } from "./domain-forms";
@@ -12,7 +13,8 @@ export const instant = false;
 
 export default async function DomainPage({ params }: PageProps<"/panel/siteler/[id]/domain">) {
   const { id } = await params;
-  const { site, publishedAt } = await getEditableSite(id);
+  const { site, role, publishedAt } = await getEditableSite(id);
+  if (!canManage(role)) notFound();
   const [domain] = await db.select().from(domains).where(eq(domains.siteId, site.id));
   const subdomainUrl = siteUrl(site.subdomain);
 

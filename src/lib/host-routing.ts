@@ -2,12 +2,18 @@ import { and, eq, or } from "drizzle-orm";
 import { db } from "@/db";
 import { domains, sites } from "@/db/schema";
 import { protocol, siteUrl } from "@/lib/config";
+import { isSuspended } from "@/lib/subscription";
 
 // Proxy katmanında çalışır (sayfa çizilmeden önce): böylece bulunamayan siteler gerçek 404,
 // asıl adrese yönlendirmeler gerçek 308 olarak döner. Sayfa yanıtı akmaya başladıktan sonra
 // durum kodu değiştirilemediği için bu kararlar sayfada verilemez.
 
-export type HostRoute = { kind: "site"; subdomain: string } | { kind: "redirect"; to: string } | { kind: "not-found" };
+export type HostRoute =
+  | { kind: "site"; subdomain: string }
+  | { kind: "redirect"; to: string }
+  | { kind: "not-found" }
+  // Aboneliği bitip toleransı da geçen site: veri durur, ziyaretçiye "geçici olarak yayında değil" gösterilir
+  | { kind: "suspended"; name: string };
 
 // Her istekte veritabanına gitmemek için kısa süreli bellek önbelleği.
 // Yayınlama veya domain değişikliği en geç bu süre sonunda yansır.
@@ -27,11 +33,22 @@ function isLive(row: { status: string; publishedVersionId: string | null }) {
   return row.status === "published" && row.publishedVersionId !== null;
 }
 
+function liveRoute(row: { name: string; subscriptionEndsAt: Date | null }, subdomain: string): HostRoute {
+  if (isSuspended(row.subscriptionEndsAt, Date.now())) return { kind: "suspended", name: row.name };
+  return { kind: "site", subdomain };
+}
+
 // kaya.platformadi.com -> yayındaysa site; custom domain'i varsa oraya 308
 export function routeSubdomain(subdomain: string) {
   return cached(`s:${subdomain}`, async () => {
     const [row] = await db
-      .select({ status: sites.status, publishedVersionId: sites.publishedVersionId, domain: domains.hostname })
+      .select({
+        name: sites.name,
+        status: sites.status,
+        publishedVersionId: sites.publishedVersionId,
+        subscriptionEndsAt: sites.subscriptionEndsAt,
+        domain: domains.hostname,
+      })
       .from(sites)
       .leftJoin(domains, and(eq(domains.siteId, sites.id), eq(domains.status, "verified")))
       .where(eq(sites.subdomain, subdomain))
@@ -39,7 +56,7 @@ export function routeSubdomain(subdomain: string) {
 
     if (!row || !isLive(row)) return { kind: "not-found" };
     if (row.domain) return { kind: "redirect", to: `${protocol}://${row.domain}` };
-    return { kind: "site", subdomain };
+    return liveRoute(row, subdomain);
   });
 }
 
@@ -51,8 +68,10 @@ export function routeCustomHost(host: string) {
       .select({
         hostname: domains.hostname,
         subdomain: sites.subdomain,
+        name: sites.name,
         status: sites.status,
         publishedVersionId: sites.publishedVersionId,
+        subscriptionEndsAt: sites.subscriptionEndsAt,
       })
       .from(domains)
       .innerJoin(sites, eq(sites.id, domains.siteId))
@@ -66,7 +85,7 @@ export function routeCustomHost(host: string) {
         ? { kind: "redirect", to: `${protocol}://${row.hostname}` }
         : { kind: "not-found" };
     }
-    return { kind: "site", subdomain: row.subdomain };
+    return liveRoute(row, row.subdomain);
   });
 }
 

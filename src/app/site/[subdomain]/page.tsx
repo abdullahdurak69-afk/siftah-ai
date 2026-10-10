@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { loadPublicSite } from "@/lib/public-site";
 import { SiteRenderer, siteMetadata } from "@/templates/render";
+import { StatsBeacon } from "@/templates/stats-beacon";
 
 // Host çözümleme, 404 ve yönlendirmeler proxy'de yapılır (src/lib/host-routing.ts); buraya sadece
 // yayında olan sitelerin istekleri gelir. Aşağıdaki kontroller ikinci bir güvenlik katmanıdır.
@@ -18,5 +19,10 @@ export default async function SitePage({ params }: PageProps<"/site/[subdomain]"
   const result = await loadPublicSite(subdomain);
   if (!result) notFound();
 
-  return <SiteRenderer data={result.data} url={result.url} />;
+  return (
+    <>
+      <SiteRenderer data={result.data} url={result.url} />
+      <StatsBeacon />
+    </>
+  );
 }

@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { panelUrl, platformName } from "@/lib/config";
+import { legalPages, type LegalPage } from "@/lib/legal-links";
 
 // Firma tanıtım sitesi 7. fazda yapılacak, şimdilik yer tutucu
 export default function Home() {
@@ -14,6 +16,13 @@ export default function Home() {
       >
         Panele giriş
       </a>
+      <nav className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-slate-500">
+        {(Object.keys(legalPages) as LegalPage[]).map((page) => (
+          <Link key={page} href={`/${page}`} className="hover:text-slate-900">
+            {legalPages[page]}
+          </Link>
+        ))}
+      </nav>
     </main>
   );
 }

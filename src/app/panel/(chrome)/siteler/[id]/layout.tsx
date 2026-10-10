@@ -1,17 +1,18 @@
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { getEditableSite } from "@/lib/dal";
+import { canManage, getEditableSite } from "@/lib/dal";
 import { siteUrl } from "@/lib/config";
 import { getTemplate } from "@/templates/registry";
 import { PublishBar } from "./publish-bar";
 import { SectionNav } from "./section-nav";
+import { SubscriptionBanner } from "./subscription-banner";
 
 // Panel her istekte kullanıcıya özel veri okur; statik kabuk gerekmez
 export const instant = false;
 
 export default async function SiteEditorLayout({ children, params }: LayoutProps<"/panel/siteler/[id]">) {
   const { id } = await params;
-  const { site, sections, publishedAt, hasUnpublishedChanges } = await getEditableSite(id);
+  const { site, role, sections, publishedAt, hasUnpublishedChanges } = await getEditableSite(id);
   const template = getTemplate(site.sector);
   const url = siteUrl(site.subdomain);
 
@@ -46,6 +47,8 @@ export default async function SiteEditorLayout({ children, params }: LayoutProps
         )}
       </div>
 
+      <SubscriptionBanner siteId={site.id} endsAt={site.subscriptionEndsAt} role={role} />
+
       {navItems.length > 0 && (
         <PublishBar
           siteId={site.id}
@@ -57,7 +60,7 @@ export default async function SiteEditorLayout({ children, params }: LayoutProps
 
       {navItems.length > 0 ? (
         <div className="flex flex-col gap-6 md:flex-row md:items-start">
-          <SectionNav siteId={site.id} items={navItems} />
+          <SectionNav siteId={site.id} items={navItems} manage={canManage(role)} />
           <div className="min-w-0 flex-1">{children}</div>
         </div>
       ) : (

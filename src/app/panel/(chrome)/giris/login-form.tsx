@@ -32,7 +32,7 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
       <FormError message={error} />
       <Field label="E-posta">
         <Input name="email" type="email" autoComplete="email" required />

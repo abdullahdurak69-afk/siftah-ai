@@ -5,7 +5,7 @@ import { domains } from "@/db/schema";
 import { domainsCacheTag, runDomainCheck } from "@/lib/domains";
 import { siteCacheTag } from "@/lib/sites";
 
-// Bekleyen domain'leri kontrol eder. Sunucuda cron ile 10 dakikada bir çağrılır:
+// Bekleyen domain'leri kontrol eder. Sunucuda cron ile 10 dakikada bir çağrılır (deploy/cron.sh domains):
 //   curl -fsS -H "Authorization: Bearer $CRON_SECRET" http://app:3000/api/cron/domains
 // Son 14 gün içinde eklenen ve hâlâ bekleyen domain'ler kontrol edilir.
 export async function GET(request: Request) {

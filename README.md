@@ -33,6 +33,47 @@ Yönlendirme `src/proxy.ts` içinde yapılır. Platform adı ve ana domain `.env
   bulunamayan siteler gerçek 404, `www` ve subdomain'den asıl domain'e geçişler gerçek 308 döner.
 - SSL: Caddy, müşteri domain'lerine sertifikayı ilk ziyarette alır; önce `/api/tls-izin` ucuna sorar.
 
+## Hesaplar ve roller
+
+- Kayıt kapalıdır. Siteleri süper admin açar, müşteriyi sitenin **Kullanıcılar** sayfasından davet eder.
+  Davet edilen kişiye şifresini belirleyeceği 7 günlük bir bağlantı gider (`src/lib/invites.ts`).
+- Roller: **süper admin** (her şey + `/admin`), **site sahibi** (içerik, domain, kullanıcılar, abonelik bilgisi),
+  **editör** (sadece içerik ve fotoğraflar). Kontroller `src/lib/dal.ts` içinde.
+- Şifre yenileme: giriş sayfasında "Şifremi unuttum"; bağlantı `/sifre-belirle` sayfasını açar.
+
+## Abonelik
+
+- Ödemeler panelde **Yönetim → site → Ödeme kaydet** ile elle girilir; bitiş tarihi uzatılır (`payments` tablosu).
+- Durum bitiş tarihinden hesaplanır (`src/lib/subscription.ts`): bitişe 30 gün kala "yenileme yaklaşıyor",
+  bitişten sonra 15 gün tolerans, sonra askı. Askıdaki site proxy'de 503 ile "geçici olarak yayında değil" döner,
+  veri silinmez. Bitiş tarihi girilmemiş siteler süre sınırı olmadan çalışır.
+- Günlük cron (`/api/cron/daily`) bitişe 30, 7, 1 gün kala, süre dolunca ve askıda site sahibine e-posta gönderir,
+  süper admine günlük özet yollar. Aynı hatırlatma iki kez gitmez (`subscription_reminders`).
+
+## E-posta
+
+`SMTP_URL` ile herhangi bir SMTP sağlayıcısı (Resend, Brevo, Yandex) kullanılır (`src/lib/email.ts`). Tanımlı değilse
+e-postalar gönderilmez, içeriği sunucu konsoluna yazılır. Her e-posta `email_log` tablosuna kaydedilir ve
+**Yönetim → E-postalar** sayfasında görünür.
+
+## Ziyaretçi istatistiği
+
+Yayındaki müşteri sitelerine küçük bir betik eklenir (`src/templates/stats-beacon.tsx`); sayfa açılışı ile telefon ve
+WhatsApp tıklamalarını `/api/t` ucuna bildirir. Çerez kullanılmaz, IP saklanmaz: günlük tekil ziyaretçi, günlük
+değişen tuzla hash'lenerek sayılır ve hash'ler ertesi gün silinir. Toplamlar `site_stats_daily` tablosunda,
+panelde sitenin genel bakış sayfasında görünür.
+
+## Yasal metinler
+
+Ana domain'de `/kvkk`, `/gizlilik-ve-cerezler`, `/kullanim-kosullari`, `/mesafeli-satis-sozlesmesi`
+(`src/app/(yasal)/`). Firma bilgileri `src/content/legal-info.ts` içinde doldurulur. Metinler taslaktır, yayından
+önce avukata kontrol ettirilmelidir.
+
+## Hata izleme
+
+`SENTRY_DSN` tanımlıysa sunucu hataları Sentry'ye (veya GlitchTip'e) gider (`src/instrumentation.ts`).
+Çerez, IP ve istek başlıkları gönderilmez.
+
 ## Sunucu
 
 Kurulum adımları: [deploy/KURULUM.md](deploy/KURULUM.md) (Docker Compose + Caddy + PostgreSQL, gece yedeği).
@@ -69,3 +110,5 @@ Panel: http://app.localhost:3000
 | `npm run db:migrate` | Migration'ları uygular |
 | `npm run db:studio` | Veritabanını tarayıcıda gösterir |
 | `npm run db:seed` | Süper admin hesabını oluşturur |
+
+Yerelde günlük görevleri elle çalıştırmak için: `curl -H "Authorization: Bearer $CRON_SECRET" http://app.localhost:3000/api/cron/daily`

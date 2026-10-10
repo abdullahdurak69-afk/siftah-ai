@@ -30,9 +30,9 @@ async function UserMenu() {
     <div className="flex items-center gap-3 text-sm">
       <span className="hidden text-slate-600 sm:inline">{user.name}</span>
       {user.isSuperAdmin && (
-        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-          Süper admin
-        </span>
+        <Link href="/admin" className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 hover:bg-amber-200">
+          Yönetim
+        </Link>
       )}
       <SignOutButton />
     </div>

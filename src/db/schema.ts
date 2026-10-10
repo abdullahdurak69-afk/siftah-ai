@@ -1,6 +1,7 @@
 import {
   type AnyPgColumn,
   boolean,
+  date,
   index,
   integer,
   jsonb,
@@ -9,6 +10,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -208,6 +210,88 @@ export const domains = pgTable(
 );
 
 export type Domain = typeof domains.$inferSelect;
+
+// Manuel ödeme kayıtları (havale, elden). Kaydedilen her ödeme sitenin abonelik bitiş tarihini uzatır.
+export const payments = pgTable(
+  "payments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    // Tam TL
+    amount: integer("amount").notNull(),
+    paidOn: date("paid_on").notNull(),
+    // Bu ödemeyle birlikte belirlenen yeni bitiş tarihi
+    periodEndsAt: timestamp("period_ends_at", { withTimezone: true }).notNull(),
+    note: text("note"),
+    recordedBy: text("recorded_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("payments_site_id_idx").on(t.siteId, t.paidOn)],
+);
+
+// Gönderilen abonelik hatırlatmaları. Aynı bitiş tarihi için aynı hatırlatma ikinci kez gönderilmez;
+// ödeme alınıp bitiş tarihi değişince hatırlatmalar yeniden başlar.
+export const subscriptionReminders = pgTable(
+  "subscription_reminders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique("subscription_reminders_once").on(t.siteId, t.kind, t.endsAt)],
+);
+
+// Gönderilen (veya gönderilemeyen) e-postaların kaydı; admin panelinde gösterilir
+export const emailLog = pgTable(
+  "email_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    to: text("to").notNull(),
+    subject: text("subject").notNull(),
+    kind: text("kind").notNull(),
+    siteId: uuid("site_id").references(() => sites.id, { onDelete: "set null" }),
+    // sent: SMTP'ye teslim edildi, logged: SMTP ayarlı değil (geliştirme), failed: hata
+    status: text("status").notNull(),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("email_log_created_at_idx").on(t.createdAt)],
+);
+
+// Ziyaretçi istatistiği: site başına günlük toplamlar. Çerez ve IP saklanmaz.
+export const siteStatsDaily = pgTable(
+  "site_stats_daily",
+  {
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    day: date("day").notNull(),
+    views: integer("views").notNull().default(0),
+    visitors: integer("visitors").notNull().default(0),
+    phoneClicks: integer("phone_clicks").notNull().default(0),
+    whatsappClicks: integer("whatsapp_clicks").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.siteId, t.day] })],
+);
+
+// Günlük tekil ziyaretçi sayımı için: o güne ait tuzla hash'lenmiş ziyaretçi izi. Ertesi gün silinir.
+export const statVisitors = pgTable(
+  "stat_visitors",
+  {
+    day: date("day").notNull(),
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+    hash: text("hash").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.siteId, t.hash] })],
+);
 
 export type SiteSnapshot = {
   name: string;

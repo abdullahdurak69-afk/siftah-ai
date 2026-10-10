@@ -7,10 +7,14 @@ import { EyeOff } from "lucide-react";
 
 type Item = { key: string; title: string; optional: boolean; enabled: boolean };
 
-export function SectionNav({ siteId, items }: { siteId: string; items: Item[] }) {
-  // ["bolum", "<key>"] ya da [] (genel bakış)
+const managePages = ["domain", "kullanicilar"];
+
+// manage: domain ve kullanıcı sayfaları sadece site sahibine ve admine gösterilir
+export function SectionNav({ siteId, items, manage }: { siteId: string; items: Item[]; manage: boolean }) {
+  // ["bolum", "<key>"], ["domain"] ya da [] (genel bakış)
   const segments = useSelectedLayoutSegments();
-  const activeKey = segments[0] === "bolum" ? segments[1] : segments.length === 0 ? "" : segments[0] === "domain" ? "domain" : null;
+  const activeKey =
+    segments[0] === "bolum" ? segments[1] : segments.length === 0 ? "" : managePages.includes(segments[0]) ? segments[0] : null;
   const navRef = useRef<HTMLElement>(null);
 
   // Mobilde menü yatay kayar; aktif bölüm görünür alana getirilir
@@ -27,9 +31,16 @@ export function SectionNav({ siteId, items }: { siteId: string; items: Item[] })
         <NavLink href={`/siteler/${siteId}`} active={activeKey === ""}>
           Genel bakış
         </NavLink>
-        <NavLink href={`/siteler/${siteId}/domain`} active={activeKey === "domain"}>
-          Domain
-        </NavLink>
+        {manage && (
+          <>
+            <NavLink href={`/siteler/${siteId}/domain`} active={activeKey === "domain"}>
+              Domain
+            </NavLink>
+            <NavLink href={`/siteler/${siteId}/kullanicilar`} active={activeKey === "kullanicilar"}>
+              Kullanıcılar
+            </NavLink>
+          </>
+        )}
         {items.map((item) => (
           <NavLink key={item.key} href={`/siteler/${siteId}/bolum/${item.key}`} active={activeKey === item.key}>
             <span className={item.enabled || activeKey === item.key ? "" : "text-slate-400"}>{item.title}</span>

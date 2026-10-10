@@ -4,7 +4,7 @@ import { updateTag } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { domains } from "@/db/schema";
-import { findEditableSite } from "@/lib/dal";
+import { findManageableSite } from "@/lib/dal";
 import { domainsCacheTag, normalizeDomainInput, runDomainCheck } from "@/lib/domains";
 import { siteCacheTag } from "@/lib/sites";
 
@@ -12,7 +12,7 @@ export type DomainActionResult =
   | { ok: true; verified?: boolean; problems?: string[]; warnings?: string[] }
   | { ok: false; message: string };
 
-const noAccess = { ok: false, message: "Bu siteyi düzenleme yetkiniz yok." } as const;
+const noAccess = { ok: false, message: "Domain ayarlarını sadece site sahibi değiştirebilir." } as const;
 
 function refreshCaches(subdomain: string) {
   updateTag(domainsCacheTag);
@@ -20,7 +20,7 @@ function refreshCaches(subdomain: string) {
 }
 
 export async function addDomain(siteId: string, input: string): Promise<DomainActionResult> {
-  const site = await findEditableSite(siteId);
+  const site = (await findManageableSite(siteId))?.site;
   if (!site) return noAccess;
 
   const normalized = normalizeDomainInput(input);
@@ -48,7 +48,7 @@ export async function addDomain(siteId: string, input: string): Promise<DomainAc
 }
 
 export async function checkDomain(siteId: string): Promise<DomainActionResult> {
-  const site = await findEditableSite(siteId);
+  const site = (await findManageableSite(siteId))?.site;
   if (!site) return noAccess;
 
   const [domain] = await db.select({ id: domains.id }).from(domains).where(eq(domains.siteId, site.id));
@@ -60,7 +60,7 @@ export async function checkDomain(siteId: string): Promise<DomainActionResult> {
 }
 
 export async function removeDomain(siteId: string): Promise<DomainActionResult> {
-  const site = await findEditableSite(siteId);
+  const site = (await findManageableSite(siteId))?.site;
   if (!site) return noAccess;
 
   await db.delete(domains).where(eq(domains.siteId, site.id));

@@ -16,8 +16,8 @@ Kullanıcıyla Türkçe konuş. Kod yorumları ve arayüz metinleri Türkçe. B�
 | 2 Şablon motoru + Usta/Teknik servis şablonu, kurulum sihirbazı | bitti | faz-2-sablon |
 | 3 Fotoğraf yükleme, önizleme, yayınla/geri al, robots/sitemap | bitti | faz-3-medya-yayin |
 | 4 Custom domain + sunucu kurulum paketi (deploy/) | bitti, sunucuda test edilmedi | faz-4-domain |
-| 5 Admin paneli + abonelik (manuel ödeme, bitiş tarihi, hatırlatma e-postası, Umami istatistik, yedekleme, Sentry/uptime, yasal metinler, 14 gün deneme?) | sıradaki | – |
-| 6 Restoran (+QR menü), kuaför, klinik şablonları | – | – |
+| 5 Admin paneli, abonelik (manuel ödeme, hatırlatma e-postası), davet + roller, istatistik, Sentry, yasal metinler | bitti | faz-5-admin |
+| 6 Restoran (+QR menü), kuaför, klinik şablonları | sıradaki | – |
 | 7 Firma tanıtım sitesi + SEO/GEO (llms.txt dahil) | – | – |
 
 Dallar zincirleme (her biri bir öncekinin üstünde), main'e henüz birleştirilmedi.
@@ -28,6 +28,11 @@ Dallar zincirleme (her biri bir öncekinin üstünde), main'e henüz birleştiri
 - Barındırma: kendi VPS'i (Türkiye'de sağlayıcı tercih, KVKK) + Docker Compose + Caddy (on-demand TLS) + Cloudflare DNS (platform domain'i, wildcard sertifika).
 - Domain'i müşteri kendisi alır. Yıllık abonelik. Paneli hem müşteri hem süper admin (ajans modeli) kullanır.
 - İlk şablon Usta/Teknik servis (referans: sancaktepeuydu.com). 6 meslek ön ayarı. Yorum ve puan asla örnek üretilmez.
+- Kayıt kapalı, ücretsiz deneme yok: siteleri süper admin açar, müşteri davetle gelir (5. faz kararı).
+- İstatistik Umami değil, kendi çerezsiz sayacımız (`site_stats_daily`); ek servis yok.
+- E-posta SMTP (nodemailer) ile, sağlayıcıdan bağımsız. Sentry sadece sunucu tarafı (`@sentry/node`), müşteri
+  sitelerine istemci betiği eklenmez.
+- Abonelik: bitiş tarihi girilmemiş site süresiz çalışır; bitişten sonra 15 gün tolerans, sonra proxy'de 503.
 
 ## Kullanıcıdan beklenenler (açık)
 
@@ -35,6 +40,9 @@ Dallar zincirleme (her biri bir öncekinin üstünde), main'e henüz birleştiri
 - VPS, platform domain'i, Cloudflare + R2 hesabı (deploy/KURULUM.md 1–3)
 - Özel GitHub deposu (kodu sunucuya çekmek için) ve sunucuya SSH anahtar erişimi
 - Yıllık fiyat
+- Firma bilgileri (`src/content/legal-info.ts`) ve yasal metinlerin avukat kontrolü; askı sonrası veri saklama
+  süresi (taslakta 90 gün)
+- E-posta sağlayıcısı (Resend önerildi) ve destek iletişim bilgileri (SUPPORT_EMAIL/PHONE)
 
 ## Dikkat edilecekler (öğrenilenler)
 
@@ -45,7 +53,10 @@ Dallar zincirleme (her biri bir öncekinin üstünde), main'e henüz birleştiri
 - Production davranışını test etmek için: `npm run build`, `.next/static` ve `public`'i `.next/standalone`'a kopyala,
   `PORT=3100 HOSTNAME=0.0.0.0 node server.js` (env: `.env.local`). Durdurmak için `lsof -ti tcp:3100 | xargs kill`
   (`pkill -f standalone/server.js` süreci yakalamıyor).
-- Render sırasında `new Date()` kullanma (cacheComponents hata verir); DB tarafında `sql\`now()\`` kullan.
+- Render sırasında `new Date()`/`Date.now()` kullanma (cacheComponents ve react-hooks/purity lint hata verir);
+  `requestNow()` (`src/lib/request-time.ts`, `connection()` + tarih) veya DB tarafında `sql\`now()\`` kullan.
+- Drizzle `sql` alt sorgularında `${tablo.sütun}` önek olmadan yazılır ve yanlış tabloya bağlanabilir
+  ("uuid = text" hatası); alt sorgularda adları elle nitele (`"sites"."id"`).
 - Server action içinde `redirect()` host bazlı proxy yeniden yazmasından geçmez; yönlendirmeyi istemcide yap.
 - `revalidateTag(tag, "max")` iki argüman ister; server action'da anında yenileme için `updateTag`.
 - `server-only` import eden modülleri tsx ile çalıştırmak için: `npx tsx --conditions=react-server <dosya>`.
@@ -58,7 +69,9 @@ Dallar zincirleme (her biri bir öncekinin üstünde), main'e henüz birleştiri
 - PostgreSQL 17 (Homebrew, `brew services`), veritabanı `site_platform`. psql: `/opt/homebrew/opt/postgresql@17/bin`.
 - Panel: http://app.localhost:3000 · Test sitesi: http://kaya.localhost:3000 (yayında, renkli test görselleri)
 - Süper admin: `admin@site-platform.test`, şifre `.env.local` → SEED_ADMIN_PASSWORD (kullanıcı henüz denemedi).
-- Tarayıcı oturumu `deneme-usta@site-platform.test` (rastgele şifre); "Kaya" ve "Yıldız Su Tesisatı" sitelerinin sahibi.
+- Test hesapları (rastgele şifre): `test-admin@site-platform.test` (süper admin), `test-editor@site-platform.test`
+  (Kaya'da editör), `deneme-usta@site-platform.test` ("Kaya" ve "Yıldız Su Tesisatı" sitelerinin sahibi).
+  Şifre gerekirse "Şifremi unuttum" kullan: SMTP yokken bağlantı dev sunucusu günlüğüne yazılır (`preview_logs`).
 - `.env.local` içindeki PLATFORM_SERVER_IP yerel DNS testi için geçici olarak sdf.org IP'si.
 - Dev sunucusu Claude tarayıcı panelinden: preview "site-platform" (launch.json scratch klasöründeydi; yeni oturumda
   `.claude/launch.json` proje içinde mevcut, adı "panel").

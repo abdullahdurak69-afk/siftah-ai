@@ -12,6 +12,7 @@ Sunucuda çalışacak yapı:
              ──► Next.js uygulaması (app:3000)
              ──► PostgreSQL (sadece iç ağda)
 Gece 03:30  ──► Veritabanı + fotoğraf yedeği → Cloudflare R2
+Her sabah   ──► Abonelik hatırlatma e-postaları, istatistik temizliği
 Her 10 dk   ──► Bekleyen müşteri domain'lerinin DNS kontrolü
 ```
 
@@ -25,6 +26,8 @@ Her 10 dk   ──► Bekleyen müşteri domain'lerinin DNS kontrolü
 | Platform domain'i | Ör. `platformadi.com` | Müşteri siteleri `firma.platformadi.com` olarak açılır. |
 | Cloudflare hesabı | Ücretsiz plan | Sadece platform domain'inin DNS'i için. Müşteri domain'leri Cloudflare'e taşınmaz. |
 | Cloudflare R2 | Ücretsiz katman (10 GB) | Gece yedekleri sunucu dışında dursun diye. |
+| E-posta gönderimi | [Resend](https://resend.com) (ücretsiz: günde 100) veya Brevo | Davet, şifre yenileme ve abonelik hatırlatmaları. Platform domain'i sağlayıcıda doğrulanmalı (SPF/DKIM DNS kayıtları). |
+| Hata izleme (isteğe bağlı) | [Sentry](https://sentry.io) ücretsiz planı veya kendi sunucunda GlitchTip | Sunucu hatalarını e-postayla bildirir. Kişisel veri gönderilmez. |
 
 ## 2. Platform domain'ini Cloudflare'e bağla
 
@@ -99,9 +102,12 @@ crontab -e
 ```
 
 ```
-30 3 * * *  /opt/site-platform/deploy/backup.sh       >> /var/log/site-platform-backup.log 2>&1
-*/10 * * * * /opt/site-platform/deploy/cron-domains.sh >> /var/log/site-platform-domains.log 2>&1
+30 3 * * *   /opt/site-platform/deploy/backup.sh         >> /var/log/site-platform-backup.log 2>&1
+0 9 * * *    /opt/site-platform/deploy/cron.sh daily     >> /var/log/site-platform-cron.log 2>&1
+*/10 * * * * /opt/site-platform/deploy/cron.sh domains   >> /var/log/site-platform-cron.log 2>&1
 ```
+
+Sunucunun saat dilimi Türkiye olmalı (`timedatectl set-timezone Europe/Istanbul`); hatırlatmalar sabah 09:00'da gider.
 
 **Yedekten geri dönüşü en az bir kez dene:** `deploy/restore.sh <yedek-zamanı>`
 
@@ -109,6 +115,11 @@ crontab -e
 
 [UptimeRobot](https://uptimerobot.com) (ücretsiz) ile `https://app.platformadi.com/api/health` adresine 5 dakikada bir
 istek atan bir izleyici kur. Site çökerse veya veritabanına ulaşılamazsa e-posta/telefon bildirimi gelir.
+
+Hata izleme için `.env` içindeki `SENTRY_DSN`'e Sentry (veya GlitchTip) projesinin DSN adresini yaz ve uygulamayı
+yeniden başlat. Sentry'de **Alerts** altında yeni hata için e-posta bildirimini aç.
+
+Gönderilen e-postalar ve hataları panelde **Yönetim → E-postalar** sayfasında görünür.
 
 ## Güncelleme
 
