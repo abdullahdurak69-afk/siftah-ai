@@ -20,7 +20,8 @@ Kullanıcıyla Türkçe konuş. Kod yorumları ve arayüz metinleri Türkçe. B�
 | 6 Restoran (+QR menü), kuaför, klinik şablonları; şablon altyapısı genelleştirildi | bitti | faz-6-sablonlar |
 | 7 Domain zorunluluğu (7a); tanıtım sitesi, SEO/GEO, llms.txt, başvuru formu (7b) | bitti | faz-7-tanitim |
 
-Dallar zincirleme (her biri bir öncekinin üstünde); 7. faz sonunda main'e birleştirildi (fast-forward).
+Dallar zincirleme (her biri bir öncekinin üstünde); 7. faz sonunda main'e birleştirildi (fast-forward) ve faz
+dalları silindi (tablodaki dal adları geçmiş içindir, commit'ler main'de).
 GitHub (özel): https://github.com/abdullahdurak69-afk/siftah-ai — yeni faz dalları main'den açılır.
 
 ## Kararlar
